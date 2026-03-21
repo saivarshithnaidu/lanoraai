@@ -6,6 +6,7 @@ import { Sparkles, Mail, Lock, Loader2, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 function LoginContent() {
   const [email, setEmail] = useState('')
@@ -24,35 +25,34 @@ function LoginContent() {
       })
       setLoading(false)
     }
+
+    // Capture referral code
+    const ref = searchParams.get('ref')
+    if (ref) {
+      localStorage.setItem('referral_code', ref)
+      console.log('Referral captured:', ref)
+    }
   }, [searchParams])
 
-  const handleGoogleLogin = () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    
-    if (!clientId) {
-      toast.error('Configuration Missing', {
-        description: 'Google Client ID is not set in environment variables.',
-      })
-      return
-    }
-
+  const handleGoogleLogin = async () => {
     setLoading(true)
-    const redirectUri = `${window.location.origin}/api/auth/google/callback`
-    const scope = 'openid email profile'
-    const responseType = 'code'
+    const supabase = createClient()
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: responseType,
-      scope: scope,
-      access_type: 'offline',
-      prompt: 'consent'
-    })
-
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
-
-    window.location.href = googleAuthUrl
+      if (error) throw error
+    } catch (error: any) {
+      toast.error('Google login failed', {
+        description: error.message || 'Please try again.',
+      })
+      setLoading(false)
+    }
   }
 
   const handleAuth = async (e: React.FormEvent) => {

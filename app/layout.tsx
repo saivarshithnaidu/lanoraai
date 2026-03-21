@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Lanora AI | Your Intelligent Companion",
   description: "Lanora is an emotionally intelligent AI companion designed for deep, personal conversations.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

@@ -141,8 +141,9 @@ export default function LandingPage() {
         <section id="pricing" className="mt-20 py-20 text-center">
             <h2 className="text-4xl font-bold mb-4">Choose Your Connection</h2>
             <p className="text-zinc-400 mb-16">Get credits to unlock deep, personal conversations.</p>
-            <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+            <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-6 px-4">
                 {[
+                  { name: "FREE 💖", price: 0, credits: 50, tag: "Start your journey", free: true },
                   { name: "Starter", price: 49, credits: 100, tag: "Best for curious souls" },
                   { name: "Popular", price: 99, credits: 250, tag: "Most chosen by our users", highlight: true },
                   { name: "Unlimited", price: 199, credits: 600, tag: "For deep emotional explorers" }
@@ -160,16 +161,16 @@ export default function LandingPage() {
                              </li>
                              <li className="flex items-center gap-3 text-sm">
                                 <Sparkles className="w-4 h-4 text-indigo-400" />
-                                All Modes: Romantic, Friendly, Flirty
+                                All Modes: {p.free ? '😊 💕' : '😊 💕 😉 🔥'}
                              </li>
                              <li className="flex items-center gap-3 text-sm text-zinc-600">
                                 <Shield className="w-4 h-4" />
-                                Advanced Security
+                                {p.free ? 'Limited Access' : 'Advanced Security'}
                              </li>
                         </ul>
-                        <button className={`w-full py-4 rounded-full font-bold transition-all ${p.highlight ? 'bg-white text-black hover:bg-zinc-200' : 'bg-white/5 hover:bg-white/10 text-white'}`}>
-                            Buy Credits
-                        </button>
+                        <Link href="/login" className={`w-full py-4 rounded-full font-bold text-center transition-all ${p.highlight ? 'bg-white text-black hover:bg-zinc-200' : 'bg-white/5 hover:bg-white/10 text-white'}`}>
+                            {p.free ? 'Start Free' : 'Buy Credits'}
+                        </Link>
                     </div>
                 ))}
             </div>

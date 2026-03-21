@@ -4,9 +4,8 @@ import { MessageSquare, User, Calendar, Tag, ChevronDown, Activity, Zap } from '
 export default async function ChatLogsPage() {
   const supabase = await createAdminClient()
   const { data: logs } = await supabase
-    .from('logs')
+    .from('chat_logs')
     .select('*')
-    .eq('type', 'chat')
     .order('created_at', { ascending: false })
     .limit(50)
 
@@ -29,10 +28,6 @@ export default async function ChatLogsPage() {
             <div className="flex items-center justify-between px-6 py-4 rounded-2xl border border-white/5 bg-white/5 mb-8">
                  <div className="flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-zinc-500">
                     <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" /> Active Requests</span>
-                    <span className="flex items-center gap-2"><Tag className="w-3 h-3" /> Latest: GPT-4o-mini</span>
-                 </div>
-                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
-                    Filter: All Providers <ChevronDown className="w-4 h-4" />
                  </div>
             </div>
 
@@ -52,19 +47,17 @@ export default async function ChatLogsPage() {
                                 </div>
                                 <div className="space-y-4 flex-grow">
                                      <div className="flex items-center gap-3">
-                                         <div className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-[10px] border border-indigo-500/20">EVENT SUCCESS</div>
+                                         <div className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 font-bold text-[10px] border border-indigo-500/20">CHAT EVENT</div>
                                          <span className="text-zinc-600 font-mono text-xs">User ID: {log.user_id?.substring(0, 13)}...</span>
                                      </div>
-                                     <h3 className="text-xl font-bold tracking-tight">{log.message}</h3>
-                                     <div className="flex items-center gap-6 mt-4">
-                                         <div className="flex items-center gap-2 text-sm text-zinc-500">
-                                            <Tag className="w-4 h-4" /> Model: {log.metadata?.model || 'N/A'}
+                                     <div className="space-y-2">
+                                         <div className="text-sm border-l-2 border-indigo-500/20 pl-4 py-1">
+                                             <span className="text-indigo-400 font-bold uppercase text-[10px] block mb-1">User Message</span>
+                                             <p className="text-zinc-300 font-medium">{log.message}</p>
                                          </div>
-                                         <div className="flex items-center gap-2 text-sm text-zinc-500">
-                                            <Activity className="w-4 h-4" /> Provider: {log.metadata?.provider || 'N/A'}
-                                         </div>
-                                         <div className="flex items-center gap-2 text-sm text-zinc-500">
-                                            <Zap className="w-4 h-4 text-yellow-500" /> {log.metadata?.tokens || 0} Tokens
+                                         <div className="text-sm border-l-2 border-green-500/20 pl-4 py-1">
+                                             <span className="text-green-400 font-bold uppercase text-[10px] block mb-1">Lanora Response</span>
+                                             <p className="text-zinc-400">{log.response?.substring(0, 200)}{log.response?.length > 200 ? '...' : ''}</p>
                                          </div>
                                      </div>
                                 </div>
@@ -75,5 +68,5 @@ export default async function ChatLogsPage() {
             </div>
         </div>
     </div>
-  )
+)
 }

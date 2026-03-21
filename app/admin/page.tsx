@@ -22,12 +22,16 @@ export default async function AdminDashboard() {
   const { data: transactions } = await supabase.from('transactions').select('amount').eq('status', 'success')
   const totalRevenue = transactions?.reduce((acc, curr) => acc + curr.amount, 0) || 0
 
-  // 2. Fetch Recent Activities Logs
-  const { data: logs } = await supabase
-    .from('logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5)
+  // 2. Fetch Recent Activities Logs (Mix of chat and error)
+  const [{ data: chatLogs }, { data: errorLogs }] = await Promise.all([
+    supabase.from('chat_logs').select('*').order('created_at', { ascending: false }).limit(3),
+    supabase.from('error_logs').select('*').order('timestamp', { ascending: false }).limit(2)
+  ])
+
+  const logs = [
+    ...(chatLogs?.map(l => ({ id: l.id, type: 'chat', message: l.message, created_at: l.created_at })) || []),
+    ...(errorLogs?.map(l => ({ id: l.id, type: 'error', message: l.message, created_at: l.timestamp })) || [])
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   // 3. API Key Status Overview
   const { data: apiKeys } = await supabase.from('api_keys').select('*')
@@ -88,7 +92,7 @@ export default async function AdminDashboard() {
                         <Activity className="w-5 h-5 text-indigo-400" />
                         System Activity
                    </h2>
-                   <Link href="/admin/logs/api" className="text-xs text-indigo-400 hover:text-white flex items-center gap-1 font-bold">
+                   <Link href="/admin/logs/chat" className="text-xs text-indigo-400 hover:text-white flex items-center gap-1 font-bold">
                        View All <ArrowRight className="w-3 h-3" />
                    </Link>
                </div>

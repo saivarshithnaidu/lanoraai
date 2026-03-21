@@ -10,28 +10,24 @@ interface ApiKey {
 export async function getNextApiKey(preferredProvider?: string): Promise<ApiKey | null> {
   const supabase = await createAdminClient()
 
-  // Always pick the least-used active key
-  let query = supabase
+  // Fetch all active keys sorted by usage
+  const { data: keys, error } = await supabase
     .from('api_keys')
     .select('*')
     .eq('status', 'active')
     .order('usage_count', { ascending: true })
-    .limit(1)
-
-  if (preferredProvider) {
-    query = query.eq('provider', preferredProvider)
-  }
-
-  const { data: keys, error } = await query
 
   if (error || !keys || keys.length === 0) {
-    // Fallback logic if preferred provider is not available
-    if (preferredProvider && preferredProvider !== 'groq') {
-        return getNextApiKey('groq')
-    }
     return null
   }
 
+  // If a provider is preferred, try to find it first
+  if (preferredProvider) {
+    const preferredKey = keys.find(k => k.provider === preferredProvider)
+    if (preferredKey) return preferredKey as ApiKey
+  }
+
+  // Otherwise, return the least-used active key
   return keys[0] as ApiKey
 }
 
@@ -67,5 +63,23 @@ export async function logUsage(userId: string, tokens: number, provider: string,
         tokens_used: tokens,
         provider,
         model
+    })
+}
+
+export async function logChat(userId: string, message: string, response: string) {
+    const supabase = await createAdminClient()
+    await supabase.from('chat_logs').insert({
+        user_id: userId,
+        message,
+        response,
+    })
+}
+
+export async function logError(message: string, stack?: string) {
+    const supabase = await createAdminClient()
+    await supabase.from('error_logs').insert({
+        message,
+        stack: stack || null,
+        timestamp: new Date().toISOString()
     })
 }
