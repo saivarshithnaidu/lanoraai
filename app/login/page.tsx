@@ -27,14 +27,22 @@ function LoginContent() {
   }, [searchParams])
 
   const handleGoogleLogin = () => {
-    setLoading(true)
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    
+    if (!clientId) {
+      toast.error('Configuration Missing', {
+        description: 'Google Client ID is not set in environment variables.',
+      })
+      return
+    }
+
+    setLoading(true)
     const redirectUri = `${window.location.origin}/api/auth/google/callback`
     const scope = 'openid email profile'
     const responseType = 'code'
 
     const params = new URLSearchParams({
-      client_id: clientId || '',
+      client_id: clientId,
       redirect_uri: redirectUri,
       response_type: responseType,
       scope: scope,
