@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Sparkles, Mail, Lock, Loader2, Heart } from 'lucide-react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -12,6 +13,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const error = searchParams.get('error')
+    if (error === 'google_auth_failed') {
+      toast.error('Google login failed', {
+        description: 'Please try again with a valid account.',
+        duration: 5000
+      })
+      setLoading(false)
+    }
+  }, [searchParams])
 
   const handleGoogleLogin = () => {
     setLoading(true)
