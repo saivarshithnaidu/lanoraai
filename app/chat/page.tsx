@@ -27,7 +27,10 @@ import {
   ChevronRight,
   UserPlus,
   Phone,
-  Video
+  Video,
+  MoreHorizontal,
+  Share2,
+  Check
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -43,7 +46,10 @@ interface Message {
 }
 
 export default function ChatPage() {
-  const [chatType, setChatType] = useState<'ai' | 'people'>('ai')
+  const [chatType, setChatType] = useState<'ai' | 'people' | 'feed'>('ai')
+  const [posts, setPosts] = useState<any[]>([])
+  const [stories, setStories] = useState<any[]>([])
+  const [isFeedLoading, setIsFeedLoading] = useState(false)
 
   // AI Chat States
   const [messages, setMessages] = useState<Message[]>([])
@@ -56,9 +62,13 @@ export default function ChatPage() {
   const [activePeopleConversationId, setActivePeopleConversationId] = useState<string | null>(null)
   const [peopleMessages, setPeopleMessages] = useState<any[]>([])
   const [availableUsers, setAvailableUsers] = useState<any[]>([])
+  const [peopleTab, setPeopleTab] = useState<'messages' | 'discover'>('discover') // New: Sub-tab for people
   const [isTyping, setIsTyping] = useState(false)
   const [isAdultVerified, setIsAdultVerified] = useState(false)
   const [showAgeVerification, setShowAgeVerification] = useState(false)
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null) // New: For profile view
+  const [selectedProfileData, setSelectedProfileData] = useState<any>(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,6 +77,9 @@ export default function ChatPage() {
   const [user, setUser] = useState<any>(null)
   const [userRole, setUserRole] = useState<'user' | 'admin'>('user')
   const [image, setImage] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -102,16 +115,25 @@ export default function ChatPage() {
           email: data.user.email,
           name: data.user.name,
           plan: data.profile.plan,
-          referral_code: data.profile.referral_code
+          referral_code: data.profile.referral_code,
+          bio: data.profile.bio,
+          birth_date: data.profile.birth_date,
+          country: data.profile.country
         })
         setCredits(data.profile.credits)
         setUserRole(data.profile.role || 'user')
         setIsAdultVerified(data.profile.is_adult_verified || false)
 
+        // Check for basic onboarding completion
+        if (!data.profile.bio || !data.profile.birth_date) {
+            setShowOnboarding(true)
+        }
+
         // Fetch conversations
         await fetchConversations()
         await fetchPeopleConversations()
         await fetchUsers()
+        await fetchFeed()
       } catch (e) {
         console.error('Chat init error:', e)
       }
@@ -196,6 +218,13 @@ export default function ChatPage() {
       const res = await fetch(`/api/people-chat/messages?conversation_id=${convId}`)
       const data = await res.json()
       setPeopleMessages(data.messages || [])
+      
+      // Mark as seen
+      await fetch('/api/people-chat/messages/seen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation_id: convId })
+      })
     } catch (e) {
       console.error('Fetch people messages error:', e)
     }
@@ -213,9 +242,60 @@ export default function ChatPage() {
         await fetchPeopleConversations()
         setActivePeopleConversationId(data.conversation.id)
         fetchPeopleMessages(data.conversation.id)
+        setPeopleTab('messages') // Switch to messages tab when starting chat
+        setSelectedProfileId(null) // Close profile if open
       }
     } catch (e) {
       toast.error('Could not start chat')
+    }
+  }
+
+  const handleFollow = async (targetUserId: string) => {
+    try {
+      const res = await fetch('/api/social/follow', {
+        method: 'POST',
+        body: JSON.stringify({ targetUserId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message)
+        fetchUsers() // Refresh list with status
+        if (selectedProfileId === targetUserId) fetchUserProfile(targetUserId)
+      }
+    } catch (e) {
+      toast.error('Follow failed')
+    }
+  }
+
+  const handleUnfollow = async (targetUserId: string) => {
+    try {
+      const res = await fetch(`/api/social/follow?userId=${targetUserId}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Unfollowed')
+        fetchUsers() 
+        if (selectedProfileId === targetUserId) fetchUserProfile(targetUserId)
+      }
+    } catch (e) {
+      toast.error('Unfollow failed')
+    }
+  }
+
+  const fetchUserProfile = async (id: string) => {
+    try {
+      setLoadingProfile(true)
+      const res = await fetch(`/api/social/profile?userId=${id}`)
+      const data = await res.json()
+      if (data.profile) {
+          setSelectedProfileData(data.profile)
+          setSelectedProfileId(id)
+      }
+    } catch (e) {
+      toast.error('Failed to load profile')
+    } finally {
+        setLoadingProfile(false)
     }
   }
 
@@ -235,7 +315,22 @@ export default function ChatPage() {
             filter: `conversation_id=eq.${activePeopleConversationId}`,
           },
           (payload) => {
-            setPeopleMessages((prev) => [...prev, payload.new])
+            setPeopleMessages((prev) => {
+              if (prev.some(m => m.id === payload.new.id)) return prev
+              return [...prev, payload.new]
+            })
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `conversation_id=eq.${activePeopleConversationId}`,
+          },
+          (payload) => {
+            setPeopleMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
           }
         )
         .on('broadcast', { event: 'typing' }, (payload) => {
@@ -423,6 +518,73 @@ export default function ChatPage() {
     router.push('/')
   }
 
+  const fetchSuggestions = async () => {
+    try {
+      setLoadingSuggestions(true)
+      const lastContext = chatType === 'ai' ? messages : peopleMessages
+      const context = lastContext.slice(-5).map(m => ({
+        role: (m.role === 'user' || m.sender_id === user?.id) ? 'user' : 'assistant',
+        content: m.content
+      }))
+      
+      const res = await fetch('/api/ai/suggest-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: context })
+      })
+      const data = await res.json()
+      if (data.suggestions) setSuggestions(data.suggestions)
+    } catch (e) {
+      toast.error('Could not get suggestions')
+    } finally {
+      setLoadingSuggestions(false)
+    }
+  }
+
+  const handleApplySuggestion = (s: string) => {
+    setInput(s)
+    setSuggestions([])
+  }
+
+  const updateOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const target = e.target as any
+    const bio = target.bio.value
+    const country = target.country.value
+    const birthDate = target.birthDate.value
+
+    try {
+        const res = await fetch('/api/profile/update', {
+            method: 'POST',
+            body: JSON.stringify({ bio, country, birth_date: birthDate })
+        })
+        if (res.ok) {
+            setShowOnboarding(false)
+            toast.success('Welcome to Lanora! 💖')
+        }
+    } catch (e) {
+        toast.error('Failed to save profile')
+    }
+  }
+
+  const fetchFeed = async () => {
+    try {
+      setIsFeedLoading(true)
+      const [resPosts, resStories] = await Promise.all([
+        fetch('/api/feed/posts'),
+        fetch('/api/feed/stories')
+      ])
+      const dataP = await resPosts.json()
+      const dataS = await resStories.json()
+      setPosts(dataP.posts || [])
+      setStories(dataS.stories || [])
+    } catch (e) {
+       console.error('Feed error:', e)
+    } finally {
+       setIsFeedLoading(false)
+    }
+  }
+
   const clearChat = async () => {
     try {
       const res = await fetch('/api/messages/clear', { method: 'POST' })
@@ -487,17 +649,24 @@ export default function ChatPage() {
         <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 mb-6">
           <button
             onClick={() => setChatType('ai')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-bold transition-all ${chatType === 'ai' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all ${chatType === 'ai' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
           >
-            <Heart className={`w-3.5 h-3.5 ${chatType === 'ai' ? 'text-pink-500' : ''}`} />
-            AI Chat
+            <Heart className={`w-3 h-3 ${chatType === 'ai' ? 'text-pink-500' : ''}`} />
+            AI
           </button>
           <button
             onClick={() => setChatType('people')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-bold transition-all ${chatType === 'people' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all ${chatType === 'people' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
           >
-            <Users className={`w-3.5 h-3.5 ${chatType === 'people' ? 'text-purple-500' : ''}`} />
+            <Users className={`w-3 h-3 ${chatType === 'people' ? 'text-purple-500' : ''}`} />
             People
+          </button>
+          <button
+            onClick={() => setChatType('feed')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all ${chatType === 'feed' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-white'}`}
+          >
+            <Sparkles className={`w-3 h-3 ${chatType === 'feed' ? 'text-indigo-400' : ''}`} />
+            Feed
           </button>
         </div>
 
@@ -544,53 +713,120 @@ export default function ChatPage() {
           </>
         ) : (
           <>
-            {/* Find People Section */}
-            <div className="flex-grow space-y-6 overflow-y-auto custom-scrollbar pr-1">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 px-4 mb-2 block">Your Chats</span>
-                <div className="space-y-1">
-                  {peopleConversations.map((conv) => {
-                    const otherParticipant = conv.chat_participants?.find((p: any) => p.user_id !== user?.id);
-                    return (
-                      <button
-                        key={conv.id}
-                        onClick={() => {
-                          setActivePeopleConversationId(conv.id)
-                          fetchPeopleMessages(conv.id)
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium transition-all text-left group ${activePeopleConversationId === conv.id
-                            ? 'bg-white/10 text-white border border-white/5'
-                            : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'
-                          }`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center shrink-0 ${activePeopleConversationId === conv.id ? 'text-purple-400' : 'text-slate-600'}`}>
-                          <User className="w-4 h-4" />
-                        </div>
-                        <span className="truncate flex-1 font-semibold">{otherParticipant?.profiles?.name || 'Someone'}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+            {/* Instagram Style DM/Discover Tabs */}
+            <div className="flex px-4 gap-4 mb-4 mt-2">
+                <button 
+                  onClick={() => setPeopleTab('messages')}
+                  className={`text-[10px] font-bold uppercase tracking-widest ${peopleTab === 'messages' ? 'text-white border-b-2 border-purple-500 pb-1' : 'text-slate-600'}`}
+                >
+                  Messages
+                </button>
+                <button 
+                  onClick={() => setPeopleTab('discover')}
+                  className={`text-[10px] font-bold uppercase tracking-widest ${peopleTab === 'discover' ? 'text-white border-b-2 border-purple-500 pb-1' : 'text-slate-600'}`}
+                >
+                  Discover
+                </button>
+            </div>
 
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 px-4 mb-2 block">People on Lanora</span>
+            <div className="flex-grow space-y-4 overflow-y-auto custom-scrollbar pr-1">
+              {peopleTab === 'messages' ? (
+                <div className="space-y-1">
+                  {peopleConversations.length === 0 ? (
+                      <div className="text-center py-10 px-4">
+                          <p className="text-xs text-slate-600 font-medium">No messages yet. Go explore!</p>
+                          <button onClick={() => setPeopleTab('discover')} className="mt-4 text-[10px] uppercase font-bold text-purple-400">Discover People</button>
+                      </div>
+                  ) : (
+                    peopleConversations.map((conv) => {
+                      const otherParticipant = conv.chat_participants?.find((p: any) => p.user_id !== user?.id);
+                      const lastMsg = conv.last_message; // Assuming we add this later or handle better
+                      return (
+                        <button
+                          key={conv.id}
+                          onClick={() => {
+                            setActivePeopleConversationId(conv.id)
+                            fetchPeopleMessages(conv.id)
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium transition-all text-left group ${activePeopleConversationId === conv.id
+                              ? 'bg-white/10 text-white border border-white/5'
+                              : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'
+                            }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center shrink-0 shadow-lg ${activePeopleConversationId === conv.id ? 'border-purple-500/50' : ''}`}>
+                            {otherParticipant?.profiles?.avatar_url ? (
+                                <img src={otherParticipant.profiles.avatar_url} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                                <User className="w-5 h-5 opacity-40" />
+                            )}
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                              <div className="flex items-center justify-between">
+                                <span className="truncate font-bold text-slate-200">{otherParticipant?.profiles?.name || 'Soul Mate'}</span>
+                                <span className="text-[9px] text-slate-600 uppercase font-black">{conv.created_at ? new Date(conv.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''}</span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate mt-0.5">Click to continue our talk...</div>
+                          </div>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              ) : (
                 <div className="space-y-1">
                   {availableUsers.map((u) => (
-                    <button
+                    <div
                       key={u.id}
-                      onClick={() => handleStartPeopleChat(u.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-slate-500 hover:text-white hover:bg-white/5 transition-all text-left border border-transparent group"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all border border-transparent group hover:bg-white/5"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-pink-500/5 group-hover:bg-pink-500/10 flex items-center justify-center shrink-0">
-                        <MessageCircle className="w-4 h-4 text-pink-500/50 group-hover:text-pink-400" />
+                      <button onClick={() => fetchUserProfile(u.id)} className="w-10 h-10 rounded-full bg-pink-500/5 border border-white/5 flex items-center justify-center shrink-0 relative overflow-hidden group-hover:scale-105 transition-transform">
+                        {u.avatar_url ? (
+                            <img src={u.avatar_url} className="w-full h-full object-cover" />
+                        ) : (
+                            <User className="w-5 h-5 text-pink-500/50" />
+                        )}
+                        {u.last_seen && (new Date().getTime() - new Date(u.last_seen).getTime() < 5 * 60 * 1000) && (
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-[#0b0b0f] z-10" />
+                        )}
+                      </button>
+                      
+                      <div className="flex-1 overflow-hidden cursor-pointer" onClick={() => fetchUserProfile(u.id)}>
+                        <div className="flex items-center gap-1.5">
+                           <span className="truncate font-bold text-white/90 text-sm group-hover:text-pink-400 transition-colors">{u.name}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium truncate flex items-center gap-2">
+                           {u.birth_date ? `${new Date().getFullYear() - new Date(u.birth_date).getFullYear()} years` : 'Age hidden'}
+                           {u.country && (
+                               <>
+                                 <span className="w-1 h-1 rounded-full bg-slate-700" />
+                                 <span>{u.country}</span>
+                               </>
+                           )}
+                        </div>
                       </div>
-                      <span className="truncate flex-1">{u.name}</span>
-                      <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
+
+                      <div className="flex gap-1">
+                         <button 
+                           onClick={() => {
+                               if (u.isFollowing) handleUnfollow(u.id)
+                               else handleFollow(u.id)
+                           }}
+                           className={`p-2 rounded-lg transition-all ${u.isFollowing ? 'bg-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400' : 'bg-pink-500/10 text-pink-400 hover:bg-pink-500/20'}`}
+                           title={u.isFollowing ? 'Unfollow' : 'Follow'}
+                         >
+                            {u.isFollowing ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                         </button>
+                         <button 
+                           onClick={() => handleStartPeopleChat(u.id)}
+                           className="p-2 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+                         >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                         </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
           </>
         )}
@@ -662,19 +898,34 @@ export default function ChatPage() {
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500/10 to-purple-500/10 flex items-center justify-center border border-white/5">
-                  {chatType === 'ai' ? <Sparkles className="w-4.5 h-4.5 text-pink-400" /> : <User className="w-4.5 h-4.5 text-purple-400" />}
+              <div 
+                className="relative cursor-pointer group"
+                onClick={() => {
+                   if (chatType === 'people' && activePeopleConversationId) {
+                       const otherId = peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.user_id
+                       if (otherId) fetchUserProfile(otherId)
+                   }
+                }}
+              >
+                <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/10 to-purple-500/10 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform overflow-hidden shadow-xl ${chatType === 'ai' ? 'rounded-xl' : 'rounded-full'}`}>
+                  {chatType === 'ai' ? (
+                      <Sparkles className="w-5 h-5 text-pink-400" />
+                  ) : (
+                      peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.avatar_url ? (
+                          <img src={peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id).profiles.avatar_url} className="w-full h-full object-cover" />
+                      ) : (
+                          <User className="w-5 h-5 text-purple-400 opacity-40 mx-auto" />
+                      )
+                  )}
                 </div>
-                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 border-2 border-slate-950 absolute -top-0.5 -right-0.5" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-slate-950 absolute -bottom-0.5 -right-0.5" />
               </div>
               <div className="flex flex-col">
                 <span className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
-                  {chatType === 'ai' ? 'Lanora' : (peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.name || 'Searching...')}
+                  {chatType === 'ai' ? 'Lanora AI' : (peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.name || 'Soul Mate')}
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-pink-500 animate-pulse" />
-                  <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
                     {chatType === 'ai' ? (loading ? 'thinking...' : 'online') : (isTyping ? 'typing...' : 'online')}
                   </span>
                 </div>
@@ -719,7 +970,113 @@ export default function ChatPage() {
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-40 px-4 md:px-0">
           <div className="max-w-[850px] mx-auto px-6 space-y-4">
-            {chatType === 'ai' ? (
+            {chatType === 'feed' ? (
+              <div className="space-y-8 py-6">
+                {/* Stories Bar */}
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar no-scrollbar">
+                  <button className="flex-shrink-0 flex flex-col items-center gap-2 group">
+                    <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-600 relative overflow-hidden group-hover:scale-105 transition-transform">
+                       <div className="w-full h-full rounded-full border-2 border-[#0b0b0f] bg-zinc-800 flex items-center justify-center">
+                         <Plus className="w-6 h-6 text-pink-400" />
+                       </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500">Your Story</span>
+                  </button>
+                  {stories.map((s, idx) => (
+                    <button key={s.id || idx} className="flex-shrink-0 flex flex-col items-center gap-2 group text-center">
+                      <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-600 group-hover:scale-105 transition-transform">
+                        <div className="w-full h-full rounded-full border-2 border-[#0b0b0f] overflow-hidden">
+                           <img src={s.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.id}`} className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-300 w-16 truncate">{s.profiles?.name || 'Someone'}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Create Post Card */}
+                <div className="glass p-6 rounded-[32px] border border-white/5 space-y-4">
+                   <div className="flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/5 flex items-center justify-center shrink-0">
+                         <User className="w-5 h-5 text-slate-500" />
+                      </div>
+                      <textarea
+                        placeholder="What's your spark today? ✨"
+                        className="flex-grow bg-transparent border-none outline-none text-sm text-slate-300 placeholder:text-slate-600 min-h-[60px] resize-none pt-2"
+                      />
+                   </div>
+                   <div className="flex justify-between items-center pt-2">
+                      <div className="flex gap-2">
+                         <button className="p-2.5 rounded-xl hover:bg-white/5 text-slate-500 transition-colors">
+                            <Camera className="w-4 h-4" />
+                         </button>
+                         <button className="p-2.5 rounded-xl hover:bg-white/5 text-slate-500 transition-colors">
+                            <ImageIcon className="w-4 h-4" />
+                         </button>
+                      </div>
+                      <button className="px-6 py-2 rounded-full bg-white/10 text-[11px] font-bold text-white hover:bg-white/20 transition-all border border-white/5">
+                        Post Life
+                      </button>
+                   </div>
+                </div>
+
+                {/* Social Feed List */}
+                <div className="space-y-6 pb-20">
+                  {isFeedLoading ? (
+                    <div className="text-center py-20 text-slate-600 animate-pulse">Gathering stars...</div>
+                  ) : posts.length === 0 ? (
+                    <div className="text-center py-20 text-slate-600 italic">No lights in the galaxy yet. Be the first?</div>
+                  ) : posts.map((post) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass rounded-[32px] border border-white/5 overflow-hidden group"
+                    >
+                      <div className="p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+                              <User className="w-5 h-5 text-slate-400" />
+                            </div>
+                            <div>
+                               <h4 className="text-sm font-bold text-white/90">{post.profiles?.name}</h4>
+                               <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium">
+                                  <span>{post.profiles?.country}</span>
+                                  <span>•</span>
+                                  <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                               </div>
+                            </div>
+                          </div>
+                          <button className="p-2 rounded-lg hover:bg-white/5 text-slate-500 opacity-0 group-hover:opacity-100 transition-all">
+                             <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-[14px] leading-relaxed text-slate-300">{post.content}</p>
+                        {post.image_url && (
+                          <div className="rounded-2xl overflow-hidden border border-white/5">
+                             <img src={post.image_url} className="w-full object-cover max-h-[400px]" />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-6 pt-2">
+                           <button className="flex items-center gap-2 text-slate-500 hover:text-pink-400 transition-colors">
+                              <Heart className="w-4 h-4" />
+                              <span className="text-[11px] font-bold">Spark</span>
+                           </button>
+                           <button className="flex items-center gap-2 text-slate-500 hover:text-purple-400 transition-colors">
+                              <MessageCircle className="w-4 h-4" />
+                              <span className="text-[11px] font-bold">Reply</span>
+                           </button>
+                           <button className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-colors ml-auto">
+                              <Share2 className="w-4 h-4" />
+                           </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ) : chatType === 'ai' ? (
               <>
                 {messages.length === 0 && !loading && (
                   <motion.div
@@ -784,14 +1141,21 @@ export default function ChatPage() {
                     key={m.id || i}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex gap-3 ${m.sender_id === user?.id ? 'flex-row-reverse' : ''} mb-4`}
+                    className={`flex flex-col ${m.sender_id === user?.id ? 'items-end' : 'items-start'} mb-4`}
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/5 ${m.sender_id === user?.id ? 'bg-zinc-800' : 'bg-purple-500/5'}`}>
-                      {m.sender_id === user?.id ? <User className="w-4 h-4 text-slate-500" /> : <MessageCircle className="w-4 h-4 text-purple-400/60" />}
+                    <div className={`flex gap-3 ${m.sender_id === user?.id ? 'flex-row-reverse' : ''} w-full`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/5 ${m.sender_id === user?.id ? 'bg-zinc-800' : 'bg-purple-500/5'}`}>
+                        {m.sender_id === user?.id ? <User className="w-4 h-4 text-slate-500" /> : <MessageCircle className="w-4 h-4 text-purple-400/60" />}
+                      </div>
+                      <div className={`px-4.5 py-3 rounded-[18px] max-w-[70%] md:max-w-[65%] text-[15px] leading-[1.6] ${m.sender_id === user?.id ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/10' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
+                        <div className="whitespace-pre-wrap">{m.content}</div>
+                      </div>
                     </div>
-                    <div className={`px-4.5 py-3 rounded-[18px] max-w-[70%] md:max-w-[65%] text-[15px] leading-[1.6] ${m.sender_id === user?.id ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/10' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
-                      <div className="whitespace-pre-wrap">{m.content}</div>
-                    </div>
+                    {m.sender_id === user?.id && i === peopleMessages.length - 1 && (
+                      <div className="text-[10px] text-slate-600 mt-1 mr-11">
+                        {m.is_seen ? `Seen` : 'Sent'}
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </>
@@ -839,6 +1203,29 @@ export default function ChatPage() {
         <div className="absolute bottom-0 left-0 w-full z-30 pt-4 pb-10 bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/95 to-transparent">
           <div className="max-w-[850px] mx-auto px-6">
             <form onSubmit={handleSend} className="relative group">
+              {/* Suggestions UI */}
+              <AnimatePresence>
+                {suggestions.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute bottom-full mb-6 left-0 w-full flex flex-wrap gap-2"
+                  >
+                    {suggestions.map((s, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleApplySuggestion(s)}
+                        className="px-4 py-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xl text-[12px] font-bold text-white hover:bg-white/20 transition-all shadow-xl"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Image Preview */}
               <AnimatePresence>
                 {image && (
@@ -870,6 +1257,14 @@ export default function ChatPage() {
                   onChange={handleImageUpload}
                 />
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={fetchSuggestions}
+                    disabled={loadingSuggestions}
+                    className={`p-2.5 rounded-full hover:bg-white/10 transition-all ${loadingSuggestions ? 'animate-pulse text-pink-400' : 'text-slate-500'}`}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -915,6 +1310,47 @@ export default function ChatPage() {
       </main>
 
       {/* Mobile Sidebar Overlay */}
+      {/* Onboarding Modal */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-md bg-zinc-900 border border-white/10 p-8 rounded-[32px] space-y-6"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-2xl bg-pink-500/10 flex items-center justify-center mx-auto mb-4 border border-pink-500/20">
+                  <Heart className="w-8 h-8 text-pink-400" />
+                </div>
+                <h2 className="text-2xl font-bold">Complete Your Soul 💖</h2>
+                <p className="text-slate-500 mt-2">Introduce yourself to the Lanora universe.</p>
+              </div>
+
+              <form onSubmit={updateOnboarding} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">About You</label>
+                  <textarea name="bio" placeholder="Tell us who you are..." className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none focus:border-pink-500/30 min-h-[100px]" required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">Country</label>
+                      <input name="country" placeholder="Your land..." className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none" required />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">Birth Date</label>
+                      <input name="birthDate" type="date" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none" required />
+                    </div>
+                </div>
+                <button type="submit" className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 font-bold text-white shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                  Enter the Galaxy
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -1017,6 +1453,89 @@ export default function ChatPage() {
                 </button>
               </div>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Social Profile Modal */}
+      <AnimatePresence>
+        {selectedProfileId && selectedProfileData && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+             <motion.div
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="w-full max-w-sm overflow-hidden rounded-[40px] glass border border-white/10 shadow-2xl relative"
+             >
+                <button 
+                  onClick={() => { setSelectedProfileId(null); setSelectedProfileData(null); }}
+                  className="absolute top-6 right-6 z-20 p-2 rounded-full bg-black/40 text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Profile Header Background */}
+                <div className="h-32 bg-gradient-to-br from-pink-500/20 to-purple-600/20 relative">
+                   <div className="absolute inset-0 bg-romantic-glow opacity-30" />
+                </div>
+
+                <div className="px-8 pb-8 -mt-12 relative z-10 text-center">
+                    <div className="w-24 h-24 rounded-full border-4 border-[#0b0b0f] mx-auto overflow-hidden bg-zinc-800 shadow-xl mb-4">
+                        {selectedProfileData.avatar_url ? (
+                            <img src={selectedProfileData.avatar_url} className="w-full h-full object-cover" />
+                        ) : (
+                            <User className="w-10 h-10 text-slate-600 mt-6 mx-auto" />
+                        )}
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-white">{selectedProfileData.name}</h2>
+                    <div className="flex items-center justify-center gap-2 mt-1 text-xs text-slate-500 font-medium">
+                        {selectedProfileData.country && <span>{selectedProfileData.country}</span>}
+                        {selectedProfileData.birth_date && (
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-slate-700" />
+                              <span>{new Date().getFullYear() - new Date(selectedProfileData.birth_date).getFullYear()} years</span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex justify-center gap-8 mt-6 py-4 border-y border-white/5">
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-white leading-none">{selectedProfileData.followers || 0}</div>
+                            <div className="text-[9px] uppercase font-black tracking-widest text-slate-600 mt-1">Followers</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-lg font-bold text-white leading-none">{selectedProfileData.following || 0}</div>
+                            <div className="text-[9px] uppercase font-black tracking-widest text-slate-600 mt-1">Following</div>
+                        </div>
+                    </div>
+
+                    {/* Bio */}
+                    <div className="mt-6 text-sm text-slate-400 leading-relaxed italic px-2">
+                        "{selectedProfileData.bio || 'This soul hasn\'t shared their story yet...'}"
+                    </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-3 mt-8">
+                        <button 
+                          onClick={() => {
+                              if (selectedProfileData.isFollowing) handleUnfollow(selectedProfileData.id)
+                              else handleFollow(selectedProfileData.id)
+                          }}
+                          className={`h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all ${selectedProfileData.isFollowing ? 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10' : 'romantic-gradient text-white shadow-lg shadow-pink-500/20 hover:scale-[1.02]'}`}
+                        >
+                          {selectedProfileData.followStatus === 'pending' ? 'Pending' : (selectedProfileData.isFollowing ? 'Following' : 'Follow')}
+                        </button>
+                        <button 
+                          onClick={() => handleStartPeopleChat(selectedProfileData.id)}
+                          className="h-12 rounded-2xl bg-white text-black font-bold text-[10px] uppercase tracking-widest hover:bg-zinc-200 transition-all active:scale-[0.98]"
+                        >
+                          Message
+                        </button>
+                    </div>
+                </div>
+             </motion.div>
           </div>
         )}
       </AnimatePresence>

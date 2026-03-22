@@ -34,25 +34,10 @@ function LoginContent() {
     }
   }, [searchParams])
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setLoading(true)
-    const supabase = createClient()
-    
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
-
-      if (error) throw error
-    } catch (error: any) {
-      toast.error('Google login failed', {
-        description: error.message || 'Please try again.',
-      })
-      setLoading(false)
-    }
+    // Redirect to our manual OAuth entry point
+    window.location.href = '/api/auth/google'
   }
 
   const handleAuth = async (e: React.FormEvent) => {

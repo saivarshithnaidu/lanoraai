@@ -9,8 +9,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
 
-  // Dynamic Redirect URI based on current origin
-  const redirectUri = `${origin}/api/auth/google/callback`
+  // Dynamic Redirect URI based on current origin - matching EXACT requirement
+  const redirectUri = `${origin}/api/auth/callback/google`
 
   if (process.env.NODE_ENV === 'development') {
     console.log('[Auth Debug] Callback called with origin:', origin)
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
     const cookieStore = await cookies()
     cookieStore.set('auth_token', authToken, {
       httpOnly: true,
-      secure: true, // Always true since Vercel uses HTTPS
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
