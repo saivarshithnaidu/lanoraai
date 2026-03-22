@@ -97,6 +97,14 @@ export async function GET(request: Request) {
       path: '/',
     })
 
+    // Track identity for admin oversight (Capture IP and Login Time)
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || '127.0.0.1'
+    await db.rpc('track_user_login', {
+      user_id: user.id,
+      user_ip: ip,
+      user_device: 'desktop_web'
+    })
+
     return NextResponse.redirect(`${origin}/chat`)
 
   } catch (error: any) {

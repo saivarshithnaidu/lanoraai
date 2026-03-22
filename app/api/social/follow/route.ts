@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
+// Handle Follow/Unfollow/Request
 export async function POST(req: Request) {
   try {
     const session = await getSession()
@@ -12,75 +13,56 @@ export async function POST(req: Request) {
     const { targetUserId } = await req.json()
     const currentUserId = session.userId as string
 
-    if (!targetUserId) {
-        return NextResponse.json({ error: 'Target user ID is required' }, { status: 400 })
+    // Check if a request already exists
+    const { data: existing, error: eError } = await db
+      .from('follows')
+      .select('status')
+      .eq('follower_id', currentUserId)
+      .eq('following_id', targetUserId)
+      .single()
+
+    if (existing) {
+      return NextResponse.json({ success: true, status: existing.status, message: 'Request already exists' })
     }
 
-    // 1. Check if target user is private
-    const { data: targetProfile, error: pError } = await db
-        .from('profiles')
-        .select('is_private')
-        .eq('id', targetUserId)
-        .single()
-
-    if (pError || !targetProfile) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const status = targetProfile.is_private ? 'pending' : 'accepted'
-
-    // 2. Insert into follows table
+    // Create a NEW follow request (pending by default)
     const { error: fError } = await db
-        .from('follows')
-        .upsert({
-            follower_id: currentUserId,
-            following_id: targetUserId,
-            status
-        }, {
-            onConflict: 'follower_id,following_id'
-        })
-    
+      .from('follows')
+      .insert({
+        follower_id: currentUserId,
+        following_id: targetUserId,
+        status: 'pending'
+      })
+
     if (fError) throw fError
 
-    return NextResponse.json({ 
-        success: true, 
-        status, 
-        message: status === 'pending' ? 'Follow request sent' : 'Following' 
-    })
-
+    return NextResponse.json({ success: true, status: 'pending', message: 'Follow request sent ⏳' })
   } catch (error: any) {
-    console.error('Follow error:', error)
+    console.error('Follow request error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function DELETE(req: Request) {
-    try {
-        const session = await getSession()
-        if (!session || !session.userId) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-    
-        const { searchParams } = new URL(req.url)
-        const targetUserId = searchParams.get('userId')
-        const currentUserId = session.userId as string
-    
-        if (!targetUserId) {
-            return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-        }
-    
-        const { error: fError } = await db
-            .from('follows')
-            .delete()
-            .eq('follower_id', currentUserId)
-            .eq('following_id', targetUserId)
-        
-        if (fError) throw fError
-    
-        return NextResponse.json({ success: true })
-        
-    } catch (error: any) {
-        console.error('Unfollow error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+// Fetch outgoing follow status (to show states in Discover)
+export async function GET(req: Request) {
+  try {
+    const session = await getSession()
+    if (!session || !session.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const currentUserId = session.userId as string
+
+    // Fetch all follows related to user
+    const { data: follows, error: fError } = await db
+      .from('follows')
+      .select('follower_id, following_id, status')
+      .or(`follower_id.eq.${currentUserId},following_id.eq.${currentUserId}`)
+
+    if (fError) throw fError
+
+    return NextResponse.json({ success: true, follows: follows || [] })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 }

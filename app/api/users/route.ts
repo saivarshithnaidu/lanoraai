@@ -14,7 +14,7 @@ export async function GET() {
     // 1. Fetch users
     const { data: users, error } = await db
       .from('profiles')
-      .select('id, name, email, bio, last_seen, avatar_url, country, interests, birth_date')
+      .select('id, name, email, bio, last_seen, avatar_url, country, interests, birth_date, is_private')
       .neq('id', currentUserId)
       .order('last_seen', { ascending: false })
       .limit(50)

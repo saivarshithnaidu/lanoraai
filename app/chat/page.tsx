@@ -62,13 +62,15 @@ export default function ChatPage() {
   const [activePeopleConversationId, setActivePeopleConversationId] = useState<string | null>(null)
   const [peopleMessages, setPeopleMessages] = useState<any[]>([])
   const [availableUsers, setAvailableUsers] = useState<any[]>([])
-  const [peopleTab, setPeopleTab] = useState<'messages' | 'discover'>('discover') // New: Sub-tab for people
+  const [peopleTab, setPeopleTab] = useState<'messages' | 'discover' | 'requests'>('discover')
   const [isTyping, setIsTyping] = useState(false)
   const [isAdultVerified, setIsAdultVerified] = useState(false)
   const [showAgeVerification, setShowAgeVerification] = useState(false)
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null) // New: For profile view
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
   const [selectedProfileData, setSelectedProfileData] = useState<any>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState<any[]>([])
+  const [outboundFollows, setOutboundFollows] = useState<any[]>([])
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -134,6 +136,7 @@ export default function ChatPage() {
         await fetchPeopleConversations()
         await fetchUsers()
         await fetchFeed()
+        await fetchRequests()
       } catch (e) {
         console.error('Chat init error:', e)
       }
@@ -207,9 +210,50 @@ export default function ChatPage() {
     try {
       const res = await fetch('/api/users')
       const data = await res.json()
-      setAvailableUsers(data.users || [])
+      
+      const resF = await fetch('/api/social/follow')
+      const dataF = await resF.json()
+      const follows = dataF.follows || []
+      setOutboundFollows(follows)
+
+      const mapped = (data.users || []).map((u: any) => {
+          const f = follows.find((f: any) => f.following_id === u.id)
+          return {
+              ...u,
+              isFollowing: !!f,
+              followStatus: f?.status
+          }
+      })
+      setAvailableUsers(mapped)
     } catch (e) {
       console.error('Fetch users error:', e)
+    }
+  }
+
+  const fetchRequests = async () => {
+    try {
+      const res = await fetch('/api/social/requests')
+      const data = await res.json()
+      if (data.requests) setPendingRequests(data.requests)
+    } catch (e) { }
+  }
+
+  const handleRequestAction = async (requestId: string, action: 'accept' | 'reject') => {
+    try {
+      const res = await fetch('/api/social/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message)
+        fetchRequests()
+        fetchUsers()
+        fetchPeopleConversations()
+      }
+    } catch (e) {
+      toast.error('Action failed')
     }
   }
 
@@ -231,6 +275,15 @@ export default function ChatPage() {
   }
 
   const handleStartPeopleChat = async (targetUserId: string) => {
+    // Check if follow is accepted
+    const follow = outboundFollows.find(f => f.following_id === targetUserId)
+    if (!follow || follow.status !== 'accepted') {
+        toast.error('Follow request required', {
+            description: 'You must be accepted before you can whisper to this soul.'
+        })
+        return
+    }
+
     try {
       const res = await fetch('/api/people-chat/conversations', {
         method: 'POST',
@@ -254,13 +307,13 @@ export default function ChatPage() {
     try {
       const res = await fetch('/api/social/follow', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId })
       })
       const data = await res.json()
       if (data.success) {
         toast.success(data.message)
         fetchUsers() // Refresh list with status
-        if (selectedProfileId === targetUserId) fetchUserProfile(targetUserId)
       }
     } catch (e) {
       toast.error('Follow failed')
@@ -607,7 +660,7 @@ export default function ChatPage() {
   }, [messages])
 
   return (
-    <div className="flex h-screen bg-[#0b0b0f] overflow-hidden text-slate-200 font-['Outfit'] relative">
+    <div className="flex flex-col md:flex-row h-screen bg-[#0b0b0f] overflow-hidden text-slate-200 font-['Outfit'] relative">
       {/* Subtle Background */}
       <div className="bg-romantic-glow" />
 
@@ -635,8 +688,8 @@ export default function ChatPage() {
         ))}
       </div>
 
-      {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-64 h-full border-r border-white/5 glass p-5 z-20 relative">
+      {/* Sidebar Desktop & Tablet */}
+      <aside className="hidden md:flex flex-col md:w-56 lg:w-64 h-full border-r border-white/5 glass p-5 z-20 relative shrink-0">
         {/* Logo Section */}
         <div className="flex items-center gap-3 mb-8 px-2">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
@@ -727,6 +780,12 @@ export default function ChatPage() {
                 >
                   Discover
                 </button>
+                <button 
+                  onClick={() => setPeopleTab('requests')}
+                  className={`text-[10px] font-bold uppercase tracking-widest ${peopleTab === 'requests' ? 'text-white border-b-2 border-purple-500 pb-1' : 'text-slate-600'}`}
+                >
+                  Requests {pendingRequests.length > 0 && `(${pendingRequests.length})`}
+                </button>
             </div>
 
             <div className="flex-grow space-y-4 overflow-y-auto custom-scrollbar pr-1">
@@ -772,6 +831,31 @@ export default function ChatPage() {
                     })
                   )}
                 </div>
+              ) : peopleTab === 'requests' ? (
+                <div className="space-y-3 px-4 py-2 flex-grow overflow-y-auto">
+                  {pendingRequests.length === 0 ? (
+                    <div className="text-center py-10"><p className="text-xs text-slate-600 font-medium italic">No pending signals</p></div>
+                  ) : (
+                    pendingRequests.map(r => (
+                      <div key={r.id} className="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-3 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden border border-white/10 flex items-center justify-center">
+                            {r.profiles?.avatar_url ? (
+                                <img src={r.profiles.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                                <User className="w-4 h-4 text-slate-500 opacity-40" />
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-white/90 truncate">{r.profiles?.name || 'Someone'}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleRequestAction(r.id, 'accept')} className="flex-1 py-2 rounded-lg bg-green-500/20 text-green-500 text-[10px] font-bold uppercase hover:bg-green-500/30 transition-all border border-green-500/10">Accept</button>
+                          <button onClick={() => handleRequestAction(r.id, 'reject')} className="flex-1 py-2 rounded-lg bg-red-500/20 text-red-500 text-[10px] font-bold uppercase hover:bg-red-500/30 transition-all border border-red-500/10">Reject</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               ) : (
                 <div className="space-y-1">
                   {availableUsers.map((u) => (
@@ -806,22 +890,21 @@ export default function ChatPage() {
                       </div>
 
                       <div className="flex gap-1">
-                         <button 
-                           onClick={() => {
-                               if (u.isFollowing) handleUnfollow(u.id)
-                               else handleFollow(u.id)
-                           }}
-                           className={`p-2 rounded-lg transition-all ${u.isFollowing ? 'bg-white/10 text-slate-400 hover:bg-red-500/10 hover:text-red-400' : 'bg-pink-500/10 text-pink-400 hover:bg-pink-500/20'}`}
-                           title={u.isFollowing ? 'Unfollow' : 'Follow'}
-                         >
-                            {u.isFollowing ? <Check className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-                         </button>
-                         <button 
-                           onClick={() => handleStartPeopleChat(u.id)}
-                           className="p-2 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
-                         >
+                          <button
+                            onClick={() => {
+                                if (u.followStatus === 'accepted' || u.followStatus === 'pending') handleUnfollow(u.id)
+                                else handleFollow(u.id)
+                            }}
+                            className={`p-2 rounded-lg transition-all ${u.followStatus === 'accepted' ? 'bg-green-500/10 text-green-500' : u.followStatus === 'pending' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-pink-500/10 text-pink-400 hover:bg-pink-500/20'}`}
+                          >
+                            {u.followStatus === 'accepted' ? '✅' : u.followStatus === 'pending' ? '⏳' : <UserPlus className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => handleStartPeopleChat(u.id)}
+                            className={`p-2 rounded-lg transition-all ${u.followStatus === 'accepted' ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20' : 'opacity-20 grayscale cursor-not-allowed'}`}
+                          >
                             <MessageCircle className="w-3.5 h-3.5" />
-                         </button>
+                          </button>
                       </div>
                     </div>
                   ))}
@@ -831,13 +914,13 @@ export default function ChatPage() {
           </>
         )}
 
-        {/* Invite & Earn Section */}
-        <div className="mt-8 px-2 space-y-4">
+        {/* Footer Section */}
+        <div className="pt-6 border-t border-white/5 space-y-4">
           <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-2 opacity-20"><Zap className="w-8 h-8 rotate-12" /></div>
             <div className="relative z-10 space-y-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Invite & Earn</div>
-              <div className="text-xs font-bold text-white/80 leading-relaxed">Share Lanora & get <span className="text-indigo-400">+10 Credits</span> for every new soul you bring.</div>
+              <div className="text-xs font-bold text-white/80 leading-relaxed">Share Lanora & get <span className="text-indigo-400">+10 Credits</span> for every new soul.</div>
 
               <button
                 onClick={() => {
@@ -851,10 +934,6 @@ export default function ChatPage() {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Footer Section */}
-        <div className="pt-6 border-t border-white/5 space-y-4">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
@@ -890,9 +969,9 @@ export default function ChatPage() {
       </aside>
 
       {/* Main Chat Area */}
-      <main className="flex-1 flex flex-col h-full relative z-10">
-        <header className="h-16 md:h-20 border-b border-white/5 flex items-center justify-between px-8 glass shrink-0 relative z-20">
-          <button className="md:hidden p-2 bg-white/5 rounded-xl text-slate-400" onClick={() => setSidebarOpen(true)}>
+      <main className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
+        <header className="h-16 md:h-20 border-b border-white/5 flex items-center justify-between px-4 md:px-8 glass shrink-0 relative z-20">
+          <button className="md:hidden p-2.5 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
 
@@ -909,7 +988,7 @@ export default function ChatPage() {
               >
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/10 to-purple-500/10 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform overflow-hidden shadow-xl ${chatType === 'ai' ? 'rounded-xl' : 'rounded-full'}`}>
                   {chatType === 'ai' ? (
-                      <Sparkles className="w-5 h-5 text-pink-400" />
+                      <Sparkles className="w-4.5 h-4.5 md:w-5 md:h-5 text-pink-400" />
                   ) : (
                       peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.avatar_url ? (
                           <img src={peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id).profiles.avatar_url} className="w-full h-full object-cover" />
@@ -921,7 +1000,7 @@ export default function ChatPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-slate-950 absolute -bottom-0.5 -right-0.5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">
+                <span className="text-[14px] md:text-[15px] font-bold text-white tracking-tight leading-none mb-1">
                   {chatType === 'ai' ? 'Lanora AI' : (peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.name || 'Soul Mate')}
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -934,7 +1013,7 @@ export default function ChatPage() {
 
             {/* AI Mode Selector (Only in AI mode) */}
             {chatType === 'ai' && (
-              <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 ml-4 hidden md:flex">
+              <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 ml-0 md:ml-4 hidden sm:flex">
                 {[
                   { id: 'friendly', label: '😊' },
                   { id: 'romantic', label: '💕' },
@@ -945,9 +1024,9 @@ export default function ChatPage() {
                     key={m.id}
                     onClick={() => handleModeChange(m.id as any)}
                     title={m.tooltip}
-                    className={`w-10 h-8 rounded-full flex items-center justify-center transition-all ${mode === m.id ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`w-8 h-7 md:w-10 md:h-8 rounded-full flex items-center justify-center transition-all ${mode === m.id ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                   >
-                    <span className="text-sm">{m.label}</span>
+                    <span className="text-xs md:text-sm">{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -968,8 +1047,8 @@ export default function ChatPage() {
         </header>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-40 px-4 md:px-0">
-          <div className="max-w-[850px] mx-auto px-6 space-y-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar pt-4 md:pt-8 pb-32 md:pb-40 px-3 md:px-0">
+          <div className="max-w-[850px] mx-auto px-4 md:px-6 space-y-4">
             {chatType === 'feed' ? (
               <div className="space-y-8 py-6">
                 {/* Stories Bar */}
@@ -1031,9 +1110,9 @@ export default function ChatPage() {
                       key={post.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="glass rounded-[32px] border border-white/5 overflow-hidden group"
+                      className="glass rounded-[24px] md:rounded-[32px] border border-white/5 overflow-hidden group"
                     >
-                      <div className="p-6 space-y-4">
+                      <div className="p-4 md:p-6 space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
@@ -1106,7 +1185,7 @@ export default function ChatPage() {
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/5 ${m.role === 'user' ? 'bg-zinc-800' : 'bg-pink-500/5'}`}>
                       {m.role === 'user' ? <User className="w-4 h-4 text-slate-500" /> : <Heart className="w-4 h-4 text-pink-400/60" />}
                     </div>
-                    <div className={`px-4.5 py-3 rounded-[18px] max-w-[70%] md:max-w-[65%] text-[15px] leading-[1.6] ${m.role === 'user' ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/10' : 'chat-bubble-ai text-slate-300'}`}>
+                    <div className={`px-4.5 py-3 rounded-[18px] max-w-[85%] md:max-w-[65%] text-[14px] md:text-[15px] leading-[1.6] ${m.role === 'user' ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/10' : 'chat-bubble-ai text-slate-300'}`}>
                       <div className="space-y-4">
                         <div className="whitespace-pre-wrap">{m.content.includes('JSON_START') ? m.content.split('JSON_START')[0].trim() : m.content}</div>
                         {(m.images || (m.content.includes('JSON_START') ? (() => { try { return JSON.parse(m.content.split('JSON_START')[1].split('JSON_END')[0]).images } catch (e) { return [] } })() : []))?.length > 0 && (
@@ -1147,7 +1226,7 @@ export default function ChatPage() {
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/5 ${m.sender_id === user?.id ? 'bg-zinc-800' : 'bg-purple-500/5'}`}>
                         {m.sender_id === user?.id ? <User className="w-4 h-4 text-slate-500" /> : <MessageCircle className="w-4 h-4 text-purple-400/60" />}
                       </div>
-                      <div className={`px-4.5 py-3 rounded-[18px] max-w-[70%] md:max-w-[65%] text-[15px] leading-[1.6] ${m.sender_id === user?.id ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/10' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
+                      <div className={`px-4.5 py-3 rounded-[18px] max-w-[85%] md:max-w-[65%] text-[14px] md:text-[15px] leading-[1.6] ${m.sender_id === user?.id ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/10' : 'bg-white/5 text-slate-300 border border-white/5'}`}>
                         <div className="whitespace-pre-wrap">{m.content}</div>
                       </div>
                     </div>
@@ -1199,9 +1278,8 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Minimal Input Area */}
-        <div className="absolute bottom-0 left-0 w-full z-30 pt-4 pb-10 bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/95 to-transparent">
-          <div className="max-w-[850px] mx-auto px-6">
+        <div className="absolute bottom-0 left-0 w-full z-30 pt-4 pb-6 md:pb-10 bg-gradient-to-t from-[#0b0b0f] via-[#0b0b0f]/95 to-transparent">
+          <div className="max-w-[850px] mx-auto px-4 md:px-6">
             <form onSubmit={handleSend} className="relative group">
               {/* Suggestions UI */}
               <AnimatePresence>
@@ -1256,28 +1334,28 @@ export default function ChatPage() {
                   ref={fileInputRef}
                   onChange={handleImageUpload}
                 />
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <div className="absolute left-1.5 md:left-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 md:gap-1">
                   <button
                     type="button"
                     onClick={fetchSuggestions}
                     disabled={loadingSuggestions}
-                    className={`p-2.5 rounded-full hover:bg-white/10 transition-all ${loadingSuggestions ? 'animate-pulse text-pink-400' : 'text-slate-500'}`}
+                    className={`p-2 rounded-full hover:bg-white/10 transition-all ${loadingSuggestions ? 'animate-pulse text-pink-400' : 'text-slate-500'}`}
                   >
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4.5 h-4.5 md:w-5 md:h-5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-full hover:bg-white/10 text-slate-500 transition-all"
+                    className="p-2 rounded-full hover:bg-white/10 text-slate-500 transition-all hidden sm:flex"
                   >
-                    <Camera className="w-5 h-5" />
+                    <Camera className="w-4.5 h-4.5 md:w-5 md:h-5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 rounded-full hover:bg-white/10 text-slate-500 transition-all"
+                    className="p-2 rounded-full hover:bg-white/10 text-slate-500 transition-all"
                   >
-                    <ImageIcon className="w-5 h-5" />
+                    <ImageIcon className="w-4.5 h-4.5 md:w-5 md:h-5" />
                   </button>
                 </div>
                 <textarea
@@ -1294,7 +1372,7 @@ export default function ChatPage() {
                     }
                   }}
                   placeholder="Whisper something..."
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-24 pr-16 text-[15px] font-medium resize-none outline-none focus:bg-white/[0.05] focus:border-pink-500/30 transition-all custom-scrollbar backdrop-blur-xl min-h-[56px] flex items-center text-slate-200"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-full py-4 pl-12 md:pl-24 pr-14 md:pr-16 text-[14px] md:text-[15px] font-medium resize-none outline-none focus:bg-white/[0.05] focus:border-pink-500/30 transition-all custom-scrollbar backdrop-blur-xl min-h-[56px] flex items-center text-slate-200"
                 />
                 <button
                   type="submit"
@@ -1366,41 +1444,117 @@ export default function ChatPage() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 w-80 bg-[#0f0a14] border-r border-white/10 z-50 p-8 flex flex-col"
+              className="fixed inset-y-0 left-0 w-72 md:w-80 bg-[#0f0a14] border-r border-white/10 z-50 p-6 md:p-8 flex flex-col"
             >
               <button onClick={() => setSidebarOpen(false)} className="absolute top-8 right-8 p-3 bg-white/5 rounded-full text-zinc-400 hover:text-[#ff4d8d] transition-colors">
                 <X className="w-6 h-6" />
               </button>
 
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff4d8d] to-[#9b5cff] flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff4d8d] to-[#9b5cff] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xl font-bold tracking-tight text-white/90">Lanora AI</span>
+                <span className="text-lg font-bold tracking-tight text-white/90">Lanora AI</span>
               </div>
 
-              <div className="flex-grow space-y-6">
-                <div className="space-y-2">
-                  <button
-                    onClick={() => { clearChat(); setSidebarOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-5 rounded-[24px] bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold"
-                  >
-                    <Plus className="w-5 h-5" />
-                    New Chat
-                  </button>
-                </div>
+              {/* Chat Type Toggle Mobile */}
+              <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 mb-6">
+                <button
+                  onClick={() => { setChatType('ai'); setSidebarOpen(false); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-bold transition-all ${chatType === 'ai' ? 'bg-white/10 text-white' : 'text-slate-600'}`}
+                >
+                  <Heart className={`w-3 h-3 ${chatType === 'ai' ? 'text-pink-500' : ''}`} />
+                  AI
+                </button>
+                <button
+                  onClick={() => { setChatType('people'); setSidebarOpen(false); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-bold transition-all ${chatType === 'people' ? 'bg-white/10 text-white' : 'text-slate-600'}`}
+                >
+                  <Users className={`w-3 h-3 ${chatType === 'people' ? 'text-purple-500' : ''}`} />
+                  People
+                </button>
+                <button
+                  onClick={() => { setChatType('feed'); setSidebarOpen(false); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-bold transition-all ${chatType === 'feed' ? 'bg-white/10 text-white' : 'text-slate-600'}`}
+                >
+                  <Sparkles className={`w-3 h-3 ${chatType === 'feed' ? 'text-indigo-400' : ''}`} />
+                  Feed
+                </button>
+              </div>
 
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-4">Menu</span>
-                  <Link href="/chat" onClick={() => setSidebarOpen(false)} className="flex items-center gap-4 px-5 py-4 rounded-[20px] bg-white/5 text-white font-bold">
-                    <Sparkles className="w-5 h-5 text-pink-400" />
-                    Messenger
-                  </Link>
-                  <button onClick={() => { clearChat(); setSidebarOpen(false); }} className="w-full flex items-center gap-4 px-5 py-4 rounded-[20px] hover:bg-white/5 text-slate-500 hover:text-red-400 transition-all font-bold">
-                    <Trash2 className="w-5 h-5" />
-                    Clear History
-                  </button>
-                </div>
+              <div className="flex-grow space-y-6 overflow-y-auto custom-scrollbar pr-1">
+                {chatType === 'ai' ? (
+                  <>
+                    <button
+                      onClick={() => { handleNewChat(); setSidebarOpen(false); }}
+                      className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold text-sm"
+                    >
+                      <Plus className="w-5 h-5" />
+                      New AI Chat
+                    </button>
+
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-4">Recents</span>
+                      {conversations.slice(0, 10).map((conv) => (
+                        <button
+                          key={conv.id}
+                          onClick={() => switchConversation(conv.id)}
+                          className={`w-full flex items-center gap-4 px-5 py-3 rounded-[20px] transition-all font-bold text-sm ${activeConversationId === conv.id ? 'bg-white/10 text-white' : 'text-slate-500'}`}
+                        >
+                          <div className={`w-1.5 h-1.5 rounded-full ${activeConversationId === conv.id ? 'bg-pink-500' : 'bg-slate-700'}`} />
+                          <span className="truncate">{conv.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : chatType === 'people' ? (
+                  <div className="space-y-4">
+                     <div className="flex gap-4 px-2">
+                        <button onClick={() => setPeopleTab('messages')} className={`text-[10px] font-black uppercase tracking-widest ${peopleTab === 'messages' ? 'text-white border-b-2 border-purple-500 pb-1' : 'text-slate-600'}`}>Messages</button>
+                        <button onClick={() => setPeopleTab('discover')} className={`text-[10px] font-black uppercase tracking-widest ${peopleTab === 'discover' ? 'text-white border-b-2 border-purple-500 pb-1' : 'text-slate-600'}`}>Discover</button>
+                     </div>
+                     <div className="space-y-1">
+                        {peopleTab === 'messages' ? (
+                           peopleConversations.length === 0 ? (
+                              <div className="text-center py-10 px-4">
+                                  <p className="text-xs text-slate-600 font-medium">No messages yet.</p>
+                              </div>
+                           ) : (
+                              peopleConversations.map(conv => {
+                                 const otherParticipant = conv.chat_participants?.find((p: any) => p.user_id !== user?.id);
+                                 return (
+                                    <button key={conv.id} onClick={() => { setActivePeopleConversationId(conv.id); fetchPeopleMessages(conv.id); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl ${activePeopleConversationId === conv.id ? 'bg-white/10' : ''}`}>
+                                       <div className="w-10 h-10 rounded-full bg-white/5 border border-white/5 overflow-hidden">
+                                           {otherParticipant?.profiles?.avatar_url ? <img src={otherParticipant.profiles.avatar_url} className="w-full h-full object-cover" /> : <User className="w-5 h-5 opacity-40 mx-auto mt-2" />}
+                                       </div>
+                                       <div className="text-left text-xs font-bold text-white truncate flex-1">{otherParticipant?.profiles?.name || 'Soul Mate'}</div>
+                                    </button>
+                                 )
+                              })
+                           )
+                        ) : (
+                           availableUsers.map(u => (
+                              <button key={u.id} onClick={() => { fetchUserProfile(u.id); setSidebarOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-left">
+                                 <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden">
+                                     {u.avatar_url && <img src={u.avatar_url} className="w-full h-full object-cover" />}
+                                 </div>
+                                 <div className="flex-1">
+                                    <div className="text-xs font-bold text-white">{u.name}</div>
+                                    <div className="text-[10px] text-slate-500">{u.country || 'Galaxy'}</div>
+                                 </div>
+                              </button>
+                           ))
+                        )}
+                     </div>
+                  </div>
+                ) : (
+                   <div className="space-y-4">
+                      <button onClick={() => { setChatType('feed'); setSidebarOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 rounded-[24px] bg-white/5 text-white font-bold text-sm">
+                        <Sparkles className="w-5 h-5 text-indigo-400" />
+                        Explore Feed
+                      </button>
+                   </div>
+                )}
               </div>
 
               <div className="p-6 rounded-[32px] bg-white/5 border border-white/10 mb-8 mt-auto">
