@@ -10,8 +10,8 @@ ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ DEFAULT now();
 -- 2. Follows System
 CREATE TABLE IF NOT EXISTS public.follows (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  follower_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  following_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  follower_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  following_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'accepted', -- 'pending' for private accounts
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(follower_id, following_id)
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.follows (
 -- 3. Social Feed (Posts)
 CREATE TABLE IF NOT EXISTS public.posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   content TEXT,
   image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
 -- 4. Stories (Expiring)
 CREATE TABLE IF NOT EXISTS public.stories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   image_url TEXT,
   content TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -39,16 +39,16 @@ CREATE TABLE IF NOT EXISTS public.stories (
 -- 5. Safety (Blocks & Reports)
 CREATE TABLE IF NOT EXISTS public.blocks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  blocker_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  blocked_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  blocker_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  blocked_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(blocker_id, blocked_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  reporter_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  target_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  reporter_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  target_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   reason TEXT,
   type TEXT, -- 'profile', 'post', 'story'
   status TEXT DEFAULT 'pending',

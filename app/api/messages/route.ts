@@ -20,10 +20,14 @@ export async function GET(request: Request) {
       .select('*')
       .eq('user_id', userId)
     
+    // Non-admins see only non-deleted messages
+    if (session.role !== 'admin') {
+      query = query.eq('is_deleted', false)
+    }
+    
     if (conversationId) {
       query = query.eq('conversation_id', conversationId)
     } else {
-      // If no conversationId, maybe fetch latest single thread (legacy)
       query = query.is('conversation_id', null)
     }
 

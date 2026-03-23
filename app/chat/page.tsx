@@ -126,9 +126,10 @@ export default function ChatPage() {
         setUserRole(data.profile.role || 'user')
         setIsAdultVerified(data.profile.is_adult_verified || false)
 
-        // Check for basic onboarding completion
-        if (!data.profile.bio || !data.profile.birth_date) {
-            setShowOnboarding(true)
+        // Check for basic onboarding completion (Redirection to Galaxy Onboarding)
+        if (!data.profile.bio || !data.profile.birth_date || !data.profile.full_name || !data.profile.phone_number) {
+            router.push('/onboarding')
+            return
         }
 
         // Fetch conversations
@@ -1389,46 +1390,6 @@ export default function ChatPage() {
 
       {/* Mobile Sidebar Overlay */}
       {/* Onboarding Modal */}
-      <AnimatePresence>
-        {showOnboarding && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="w-full max-w-md bg-zinc-900 border border-white/10 p-8 rounded-[32px] space-y-6"
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-2xl bg-pink-500/10 flex items-center justify-center mx-auto mb-4 border border-pink-500/20">
-                  <Heart className="w-8 h-8 text-pink-400" />
-                </div>
-                <h2 className="text-2xl font-bold">Complete Your Soul 💖</h2>
-                <p className="text-slate-500 mt-2">Introduce yourself to the Lanora universe.</p>
-              </div>
-
-              <form onSubmit={updateOnboarding} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">About You</label>
-                  <textarea name="bio" placeholder="Tell us who you are..." className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none focus:border-pink-500/30 min-h-[100px]" required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">Country</label>
-                      <input name="country" placeholder="Your land..." className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none" required />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-4">Birth Date</label>
-                      <input name="birthDate" type="date" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none" required />
-                    </div>
-                </div>
-                <button type="submit" className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 font-bold text-white shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-                  Enter the Galaxy
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {sidebarOpen && (
           <>

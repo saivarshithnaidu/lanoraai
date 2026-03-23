@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     if (process.env.NODE_ENV === 'development') console.log('[Auth Debug] User authenticated:', email)
 
     // 3. Upsert user in profiles table
-    let { data: user } = await db
+    let { data: user, error: selectError } = await db
       .from('profiles')
       .select('*')
       .eq('email', email)
@@ -69,22 +69,32 @@ export async function GET(request: Request) {
         .from('profiles')
         .insert({
           email,
-          name: name || email.split('@')[0],
-          credits: 100
+          full_name: name || email.split('@')[0],
+          credits: 100,
+          role: email === (process.env.ADMIN_EMAIL || 'admin@lanora.ai') ? 'admin' : 'user'
         })
         .select()
         .single()
       
       if (createError) throw createError
       user = newUser
+    } else {
+      // Check if user is blocked
+      if (user.is_blocked) {
+        return NextResponse.redirect(`${origin}/login?error=blocked`)
+      }
+      
+      // Update name/picture if changed (optional)
+      await db.from('profiles').update({ full_name: name }).eq('id', user.id)
     }
 
     // 4. Create manual JWT
     const authToken = await signJWT({
       userId: user.id,
       email: user.email,
-      name: user.name,
-      picture
+      name: name || user.full_name,
+      picture,
+      role: user.role
     })
 
     // 5. Store in HTTP-only cookie
@@ -104,6 +114,11 @@ export async function GET(request: Request) {
       user_ip: ip,
       user_device: 'desktop_web'
     })
+
+    // Redirection Logic: If name or phone is missing, go to onboarding
+    if (!user.full_name || !user.phone_number) {
+        return NextResponse.redirect(`${origin}/onboarding`)
+    }
 
     return NextResponse.redirect(`${origin}/chat`)
 
