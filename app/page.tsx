@@ -175,6 +175,23 @@ export default function LandingPage() {
                 ))}
             </div>
         </section>
+        {/* Peerlist Badge Section */}
+        <div className="mt-24 flex flex-col items-center justify-center py-12">
+          <p className="text-zinc-500 text-sm font-medium">Support us on Peerlist 💖</p>
+          <a 
+            href="https://peerlist.io/saivarshith8284/project/lanora-ai--your-intelligent-companion" 
+            target="_blank" 
+            rel="noreferrer"
+            className="mt-5 hover:scale-105 transition-transform duration-200"
+          >
+            <img
+              src="https://peerlist.io/api/v1/projects/embed/PRJHGNQRQGRM8DOKKFK6E6BOLMBJDR?showUpvote=true&theme=dark"
+              alt="Lanora AI | Your Intelligent Companion"
+              style={{ height: '72px', width: 'auto' }}
+              className="max-w-[90vw]"
+            />
+          </a>
+        </div>
       </main>
 
       {/* Footer */}
