@@ -42,7 +42,35 @@ function LoginContent() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.error('Standard login is currently disabled. Please use Google Sign-In.')
+    setLoading(true)
+    
+    try {
+      const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/login'
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed')
+      }
+
+      toast.success(isSignUp ? 'Account created successfully!' : 'Welcome back!')
+      
+      // Check for redirect param
+      const redirect = searchParams.get('redirect')
+      router.push(redirect || '/chat')
+      
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

@@ -19,12 +19,23 @@ export default function ProfilePage() {
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [payingFor, setPayingFor] = useState<number | null>(null)
+  const [billingDetails, setBillingDetails] = useState({
+    full_name: '',
+    mobile_number: '',
+    country: '',
+    state: '',
+    district: '',
+    street_address: ''
+  })
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [isBillingValid, setIsBillingValid] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
     fetchUserData()
-
+    fetchBillingData()
+    
     const script = document.createElement('script')
     script.src = 'https://checkout.razorpay.com/v1/checkout.js'
     script.async = true
@@ -34,6 +45,12 @@ export default function ProfilePage() {
       document.body.removeChild(script)
     }
   }, [])
+
+  useEffect(() => {
+    const isValid = Object.values(billingDetails).every(val => val.trim().length > 0) &&
+                    billingDetails.mobile_number.trim().length >= 10
+    setIsBillingValid(isValid)
+  }, [billingDetails])
 
   const fetchUserData = async () => {
     setLoading(true)
@@ -47,9 +64,10 @@ export default function ProfilePage() {
       setProfile({
         ...data.profile,
         email: data.user.email,
-        name: data.user.name
+        name: data.user.name,
+        credits: data.profile?.credits || 0
       })
-      setTransactions(data.transactions)
+      setTransactions(data.transactions || [])
     } catch (error: any) {
       toast.error(error.message)
     } finally {
@@ -57,18 +75,83 @@ export default function ProfilePage() {
     }
   }
 
+  const fetchBillingData = async () => {
+    try {
+      const res = await fetch('/api/billing')
+      const data = await res.json()
+      if (data.billing) {
+        setBillingDetails({
+          full_name: data.billing.full_name || '',
+          mobile_number: data.billing.mobile_number || '',
+          country: data.billing.country || '',
+          state: data.billing.state || '',
+          district: data.billing.district || '',
+          street_address: data.billing.street_address || ''
+        })
+      }
+    } catch (error) {
+      console.error('Failed to load billing info')
+    }
+  }
+
+  const detectLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser")
+      return
+    }
+
+    setBillingLoading(true)
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const { latitude, longitude } = position.coords
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+        const data = await response.json()
+        const address = data.address
+        setBillingDetails(prev => ({
+          ...prev,
+          country: address.country || prev.country,
+          state: address.state || address.province || prev.state,
+          district: address.state_district || address.city || address.town || prev.district,
+          street_address: address.suburb || address.neighbourhood || address.road || prev.street_address
+        }))
+        toast.success("Location auto-filled! ✨")
+      } catch (error) {
+        toast.error("Failed to detect location details")
+      } finally {
+        setBillingLoading(false)
+      }
+    }, (error) => {
+      toast.error("Location access denied")
+      setBillingLoading(false)
+    })
+  }
+
   const handlePurchase = async (amount: number, creditsToBuy: number) => {
+    if (!isBillingValid) {
+      toast.error("Please fill all billing details correctly")
+      return
+    }
+
     setPayingFor(amount)
     try {
-      // 1. Create order
+      // 1. Save Billing Details
+      const bRes = await fetch('/api/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(billingDetails)
+      })
+      const { billingId, error: bError } = await bRes.json()
+      if (bError) throw new Error(bError)
+
+      // 2. Create order
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, credits: creditsToBuy })
+        body: JSON.stringify({ amount, credits: creditsToBuy, billingId })
       })
       const { orderId } = await res.json()
 
-      // 2. Open Razorpay Checkout
+      // 3. Open Razorpay Checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
         amount: amount * 100, 
@@ -77,7 +160,7 @@ export default function ProfilePage() {
         description: `Purchase ${creditsToBuy} credits`,
         order_id: orderId,
         handler: async function (response: any) {
-          // 3. Verify payment
+          // 4. Verify payment
           const verifyRes = await fetch('/api/payment/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -90,7 +173,7 @@ export default function ProfilePage() {
 
           const data = await verifyRes.json()
           if (data.success) {
-            toast.success('Payment successful! Credits updated.')
+            toast.success('Payment successful — credits added ⚡')
             fetchUserData()
           } else {
             toast.error('Payment verification failed.')
@@ -98,6 +181,8 @@ export default function ProfilePage() {
         },
         prefill: {
           email: profile?.email,
+          contact: billingDetails.mobile_number,
+          name: billingDetails.full_name
         },
         theme: {
           color: '#6366f1',
@@ -106,8 +191,8 @@ export default function ProfilePage() {
 
       const rzp = new window.Razorpay(options)
       rzp.open()
-    } catch (error) {
-      toast.error('Failed to initiate payment')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to initiate payment')
     } finally {
       setPayingFor(null)
     }
@@ -161,11 +246,91 @@ export default function ProfilePage() {
              </div>
         </div>
 
+        {/* Billing Form Section */}
+        <div className="space-y-8 max-w-4xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h2 className="text-2xl font-bold flex items-center gap-3">
+                    <Shield className="w-6 h-6 text-indigo-400" />
+                    Billing Details
+                </h2>
+                <button 
+                  onClick={detectLocation}
+                  disabled={billingLoading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-bold transition-all"
+                >
+                    {billingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Use My Location 📍'}
+                </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 bg-white/5 p-8 rounded-[40px] border border-white/5">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">Full Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. John Doe"
+                      value={billingDetails.full_name}
+                      onChange={(e) => setBillingDetails({...billingDetails, full_name: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">Mobile Number</label>
+                    <input 
+                      type="tel" 
+                      placeholder="e.g. +91 9876543210"
+                      value={billingDetails.mobile_number}
+                      onChange={(e) => setBillingDetails({...billingDetails, mobile_number: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">Country</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. India"
+                      value={billingDetails.country}
+                      onChange={(e) => setBillingDetails({...billingDetails, country: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">State</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Maharashtra"
+                      value={billingDetails.state}
+                      onChange={(e) => setBillingDetails({...billingDetails, state: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">District / City</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Mumbai"
+                      value={billingDetails.district}
+                      onChange={(e) => setBillingDetails({...billingDetails, district: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-2">Street Address</label>
+                    <input 
+                      type="text" 
+                      placeholder="House No, Area, Locality"
+                      value={billingDetails.street_address}
+                      onChange={(e) => setBillingDetails({...billingDetails, street_address: e.target.value})}
+                      className="w-full h-14 px-6 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-indigo-500/50 transition-all text-sm font-medium"
+                    />
+                </div>
+            </div>
+        </div>
+
         {/* Pricing Options */}
         <div className="space-y-8">
             <h2 className="text-2xl font-bold flex items-center gap-3">
                 <CreditCard className="w-6 h-6 text-indigo-400" />
-                Purchase Credits
+                Select Credit Plan
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
                 {[
@@ -200,10 +365,10 @@ export default function ProfilePage() {
 
                         <button 
                           onClick={() => handlePurchase(plan.price, plan.credits)}
-                          disabled={payingFor !== null}
-                          className={`w-full h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${plan.popular ? 'bg-white text-black hover:bg-zinc-200 shadow-lg' : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}
+                          disabled={payingFor !== null || !isBillingValid}
+                          className={`w-full h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${!isBillingValid ? 'opacity-50 cursor-not-allowed bg-white/5 text-zinc-500' : plan.popular ? 'bg-white text-black hover:bg-zinc-200 shadow-lg' : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}
                         >
-                            {payingFor === plan.price ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Buy Now'}
+                            {payingFor === plan.price ? <Loader2 className="w-5 h-5 animate-spin" /> : !isBillingValid ? 'Complete Billing Above' : 'Buy Now'}
                         </button>
                     </motion.div>
                 ))}
