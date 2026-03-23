@@ -168,7 +168,7 @@ export default function LandingPage() {
                                 {p.free ? 'Limited Access' : 'Advanced Security'}
                              </li>
                         </ul>
-                        <Link href="/login" className={`w-full py-4 rounded-full font-bold text-center transition-all ${p.highlight ? 'bg-white text-black hover:bg-zinc-200' : 'bg-white/5 hover:bg-white/10 text-white'}`}>
+                        <Link href={p.free ? "/login" : "/profile"} className={`w-full py-4 rounded-full font-bold text-center transition-all ${p.highlight ? 'bg-white text-black hover:bg-zinc-200' : 'bg-white/5 hover:bg-white/10 text-white'}`}>
                             {p.free ? 'Start Free' : 'Buy Credits'}
                         </Link>
                     </div>
