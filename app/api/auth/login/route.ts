@@ -1,4 +1,4 @@
-﻿import { db } from '@/lib/db'
+import { db } from '@/lib/db'
 import { signJWT } from '@/lib/jwt'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -61,8 +61,10 @@ export async function POST(request: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Login Error]:', error.message || error)
+    console.error('[Login Error]:', errorMessage)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+
 

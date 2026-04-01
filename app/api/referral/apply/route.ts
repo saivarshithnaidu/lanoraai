@@ -1,4 +1,4 @@
-﻿import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -33,8 +33,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true, message: 'Referral applied! +10 Credits received.' })
     } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-        return NextResponse.json({ error: e.message }, { status: 500 })
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 }
-

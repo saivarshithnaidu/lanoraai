@@ -107,7 +107,7 @@ export default function ProfilePage() {
       const res = await fetch('/api/user/keys')
       const data = await res.json()
       if (data.keys) setKeys(data.keys)
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load API keys')
     }
   }
@@ -126,7 +126,7 @@ export default function ProfilePage() {
           street_address: data.billing.street_address || ''
         })
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to load billing info')
     }
   }
@@ -152,7 +152,7 @@ export default function ProfilePage() {
           street_address: address.suburb || address.neighbourhood || address.road || prev.street_address
         }))
         toast.success("Location auto-filled! âœ¨")
-      } catch (error) {
+      } catch (error: unknown) {
         toast.error("Failed to detect location details")
       } finally {
         setBillingLoading(false)
@@ -567,4 +567,5 @@ export default function ProfilePage() {
     </div>
   )
 }
+
 

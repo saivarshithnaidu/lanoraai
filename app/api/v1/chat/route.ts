@@ -87,11 +87,15 @@ export async function POST(req: Request) {
         break
 
       } catch (error: unknown) {
-    // unused_error_message
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         attempts++
-        lastError = error.message
-        if (error.status === 401 || error.status === 429) {
-          await markKeyAsFailed(providerKey.id)
+        lastError = errorMessage
+        // Check for OpenAI API error structure
+        if (typeof error === 'object' && error !== null && 'status' in error) {
+            const status = (error as { status: number }).status
+            if (status === 401 || status === 429) {
+                await markKeyAsFailed(providerKey.id)
+            }
         }
       }
     }
@@ -137,9 +141,11 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('API V1 Error:', error)
+console.error('API V1 Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+
 
 

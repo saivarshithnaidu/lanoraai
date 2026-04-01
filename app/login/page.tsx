@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
@@ -68,7 +68,7 @@ function LoginContent() {
       
     } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(error.message)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }

@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ data, counts })
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Admin API error:', error)
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
@@ -83,7 +83,11 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true })
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 }
+
+
+
+

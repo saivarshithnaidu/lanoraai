@@ -227,7 +227,7 @@ export default function ChatPage() {
         await fetchUsers()
         await fetchFeed()
         await fetchRequests()
-      } catch (e) {
+      } catch (e: unknown) {
         console.error('Chat init error:', e)
       }
     }
@@ -258,7 +258,7 @@ export default function ChatPage() {
           }
           // Remove anyway whether success or fail to avoid constant retry
           localStorage.removeItem('referral_code')
-        } catch (e) {
+        } catch (e: unknown) {
           console.error('Referral application failed:', e)
         }
       }
@@ -278,7 +278,7 @@ export default function ChatPage() {
       } else {
         handleNewChat()
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Fetch conversations error:', e)
     }
   }
@@ -292,7 +292,7 @@ export default function ChatPage() {
         setActivePeopleConversationId(data.conversations[0].id)
         fetchPeopleMessages(data.conversations[0].id)
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Fetch people conversations error:', e)
     }
   }
@@ -316,7 +316,7 @@ export default function ChatPage() {
           }
       })
       setAvailableUsers(mapped)
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Fetch users error:', e)
     }
   }
@@ -345,7 +345,7 @@ export default function ChatPage() {
         fetchUsers()
         fetchPeopleConversations()
       }
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Action failed')
     }
   }
@@ -362,7 +362,7 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversation_id: convId })
       })
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Fetch people messages error:', e)
     }
   }
@@ -391,7 +391,7 @@ export default function ChatPage() {
         setPeopleTab('messages') // Switch to messages tab when starting chat
         setSelectedProfileId(null) // Close profile if open
       }
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Could not start chat')
     }
   }
@@ -408,7 +408,7 @@ export default function ChatPage() {
         toast.success(data.message)
         fetchUsers() // Refresh list with status
       }
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Follow failed')
     }
   }
@@ -424,7 +424,7 @@ export default function ChatPage() {
         fetchUsers() 
         if (selectedProfileId === targetUserId) fetchUserProfile(targetUserId)
       }
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Unfollow failed')
     }
   }
@@ -492,7 +492,8 @@ export default function ChatPage() {
         channelRef.current = null
       }
     }
-  }, [chatType, activePeopleConversationId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatType, activePeopleConversationId, supabase, user?.id])
 
   const handleTyping = () => {
     if (channelRef.current) {
@@ -510,7 +511,7 @@ export default function ChatPage() {
       if (!res.ok) throw new Error('Failed to fetch messages')
       const data = await res.json()
       setMessages(data.messages || [])
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Could not load chat history')
     }
   }
@@ -529,7 +530,7 @@ export default function ChatPage() {
         setActiveConversationId(data.conversation.id)
         setMessages([])
       }
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Could not create new chat')
     } finally {
       setLoading(false)
@@ -566,7 +567,7 @@ export default function ChatPage() {
       setShowAgeVerification(false)
       setMode('private')
       toast.success('Age verified! Access granted 🌙')
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Something went wrong')
     }
   }
@@ -596,7 +597,7 @@ export default function ChatPage() {
             content
           })
         })
-      } catch (e) {
+      } catch (e: unknown) {
         toast.error('Failed to send message')
       }
       return
@@ -675,7 +676,7 @@ export default function ChatPage() {
       })
       const data = await res.json()
       if (data.suggestions) setSuggestions(data.suggestions)
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Could not get suggestions')
     } finally {
       setLoadingSuggestions(false)
@@ -700,7 +701,7 @@ export default function ChatPage() {
       const dataS = await resStories.json()
       setPosts(dataP.posts || [])
       setStories(dataS.stories || [])
-    } catch (e) {
+    } catch (e: unknown) {
        console.error('Feed error:', e)
     } finally {
        setIsFeedLoading(false)
@@ -713,7 +714,7 @@ export default function ChatPage() {
       if (!res.ok) throw new Error('Failed to clear chat')
       setMessages([])
       toast.success('Chat history cleared')
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error('Could not clear chat')
     }
   }
@@ -1129,7 +1130,7 @@ export default function ChatPage() {
                     <button key={s.id || idx} className="flex-shrink-0 flex flex-col items-center gap-2 group text-center">
                       <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-purple-600 group-hover:scale-105 transition-transform">
                         <div className="w-full h-full rounded-full border-2 border-[#0b0b0f] overflow-hidden">
-                           <img src={s.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.id}`} className="w-full h-full object-cover" />
+                           <img src={s.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.id}`} alt={`Story from ${s.profiles?.name || 'Someone'}`} className="w-full h-full object-cover" />
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-slate-300 w-16 truncate">{s.profiles?.name || 'Someone'}</span>
@@ -1198,7 +1199,7 @@ export default function ChatPage() {
                         <p className="text-[14px] leading-relaxed text-slate-300">{post.content}</p>
                         {post.image_url && (
                           <div className="rounded-2xl overflow-hidden border border-white/5">
-                             <img src={post.image_url} className="w-full object-cover max-h-[400px]" />
+                             <img src={post.image_url} alt={`Post by ${post.profiles?.name || 'User'}`} className="w-full object-cover max-h-[400px]" />
                           </div>
                         )}
                         <div className="flex items-center gap-6 pt-2">
@@ -1252,7 +1253,7 @@ export default function ChatPage() {
                     <div className={`px-4.5 py-3 rounded-[18px] max-w-[85%] md:max-w-[65%] text-[14px] md:text-[15px] leading-[1.6] ${m.role === 'user' ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/10' : 'chat-bubble-ai text-slate-300'}`}>
                       <div className="space-y-4">
                         <div className="whitespace-pre-wrap">{m.content.includes('JSON_START') ? m.content.split('JSON_START')[0].trim() : m.content}</div>
-                        {(m.images || (m.content.includes('JSON_START') ? (() => { try { return JSON.parse(m.content.split('JSON_START')[1].split('JSON_END')[0]).images } catch (e) { return [] } })() : []))?.length > 0 && (
+                        {(m.images || (m.content.includes('JSON_START') ? (() => { try { return JSON.parse(m.content.split('JSON_START')[1].split('JSON_END')[0]).images } catch (e: unknown) { return [] } })() : []))?.length > 0 && (
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             {(m.images || JSON.parse(m.content.split('JSON_START')[1].split('JSON_END')[0]).images).map((img: string, idx: number) => (
                               <motion.div
@@ -1560,7 +1561,7 @@ export default function ChatPage() {
                            availableUsers.map(u => (
                               <button key={u.id} onClick={() => { fetchUserProfile(u.id); setSidebarOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 text-left">
                                  <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden">
-                                     {u.avatar_url && <img src={u.avatar_url} className="w-full h-full object-cover" />}
+                                     {u.avatar_url && <img src={u.avatar_url} alt={u.name || 'User Profile'} className="w-full h-full object-cover" />}
                                  </div>
                                  <div className="flex-1">
                                     <div className="text-xs font-bold text-white">{u.name}</div>
@@ -1720,3 +1721,4 @@ export default function ChatPage() {
     </div>
   )
 }
+

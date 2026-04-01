@@ -1,4 +1,4 @@
-﻿import { db } from '@/lib/db'
+import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -27,8 +27,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ billing })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Billing fetch error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+console.error('Billing fetch error:', error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -70,8 +70,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ billingId: billing.id })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Billing save error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+console.error('Billing save error:', error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+
+
 

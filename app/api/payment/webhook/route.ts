@@ -1,4 +1,4 @@
-﻿import { db } from '@/lib/db'
+import { db } from '@/lib/db'
 import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 
@@ -69,8 +69,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ status: 'ok' })
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Webhook Error]:', error.message || error)
+    console.error('[Webhook Error]:', errorMessage)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+
 

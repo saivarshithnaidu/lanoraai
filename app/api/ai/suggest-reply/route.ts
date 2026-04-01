@@ -1,4 +1,4 @@
-﻿import { db } from '@/lib/db'
+import { db } from '@/lib/db'
 import { getNextApiKey, incrementKeyUsage, logToDB, logUsage } from '@/lib/api-pool'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
@@ -89,8 +89,10 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('AI suggest error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+console.error('AI suggest error:', error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+
+
 

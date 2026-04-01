@@ -1,4 +1,4 @@
-﻿import { db } from '@/lib/db'
+import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -30,8 +30,10 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Update profile error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+console.error('Update profile error:', error)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+
+
 

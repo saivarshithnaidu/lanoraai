@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         const data = await res.json()
         return data.results.map((r: { urls: { regular: string } }) => r.urls.regular)
       } catch (error: unknown) {
-        console.error('Image search failed:', error)
+console.error('Image search failed:', error)
         return []
       }
     }
@@ -214,8 +214,8 @@ export async function POST(req: Request) {
         break
 
       } catch (error: unknown) {
-        attempts++
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        attempts++
         const errorStack = error instanceof Error ? error.stack : undefined
         const errorStatus = (error as { status?: number }).status
 
@@ -269,3 +269,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: errorMessage || 'Internal server error' }, { status: 500 })
   }
 }
+
+

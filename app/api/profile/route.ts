@@ -54,8 +54,10 @@ export async function GET(request: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Profile fetch error:', errorMessage)
+console.error('Profile fetch error:', errorMessage)
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+
+
 

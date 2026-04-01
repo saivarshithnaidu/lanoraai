@@ -127,8 +127,10 @@ export async function GET(request: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Auth Error] Manual OAuth failed:', errorMessage)
+console.error('[Auth Error] Manual OAuth failed:', errorMessage)
     return NextResponse.redirect(`${origin}/login?error=google_auth_failed`)
   }
 }
+
+
 
