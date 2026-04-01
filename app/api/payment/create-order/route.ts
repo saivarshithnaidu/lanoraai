@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { razorpay } from '@/lib/razorpay'
 import { NextResponse } from 'next/server'
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const userId = session.userId as string
     const { amount, credits, billingId } = await req.json()
 
-    // Razorpay amount is in paise (₹1 = 100 paise)
+    // Razorpay amount is in paise (â‚¹1 = 100 paise)
     const order = await razorpay.orders.create({
       amount: amount * 100,
       currency: 'INR',
@@ -35,8 +35,10 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ orderId: order.id })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Payment order creation error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

@@ -10,13 +10,37 @@ import Link from 'next/link'
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
   }
 }
 
+interface UserProfileData {
+  id: string
+  email: string
+  name: string
+  credits: number
+  role?: string
+}
+
+interface Transaction {
+  id: string
+  order_id: string
+  amount: number
+  credits_added: number
+  status: string
+  created_at: string
+}
+
+interface UserKey {
+  id: string
+  api_key: string
+  created_at: string
+  last_used_at?: string
+}
+
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null)
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [profile, setProfile] = useState<UserProfileData | null>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [payingFor, setPayingFor] = useState<number | null>(null)
   const [billingDetails, setBillingDetails] = useState({
@@ -29,12 +53,14 @@ export default function ProfilePage() {
   })
   const [billingLoading, setBillingLoading] = useState(false)
   const [isBillingValid, setIsBillingValid] = useState(false)
+  const [keys, setKeys] = useState<UserKey[]>([])
   const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
     fetchUserData()
     fetchBillingData()
+    fetchKeys()
     
     const script = document.createElement('script')
     script.src = 'https://checkout.razorpay.com/v1/checkout.js'
@@ -68,10 +94,21 @@ export default function ProfilePage() {
         credits: data.profile?.credits || 0
       })
       setTransactions(data.transactions || [])
-    } catch (error: any) {
-      toast.error(error.message)
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchKeys = async () => {
+    try {
+      const res = await fetch('/api/user/keys')
+      const data = await res.json()
+      if (data.keys) setKeys(data.keys)
+    } catch (error) {
+      console.error('Failed to load API keys')
     }
   }
 
@@ -114,7 +151,7 @@ export default function ProfilePage() {
           district: address.state_district || address.city || address.town || prev.district,
           street_address: address.suburb || address.neighbourhood || address.road || prev.street_address
         }))
-        toast.success("Location auto-filled! ✨")
+        toast.success("Location auto-filled! âœ¨")
       } catch (error) {
         toast.error("Failed to detect location details")
       } finally {
@@ -159,7 +196,7 @@ export default function ProfilePage() {
         name: 'Lanora AI',
         description: `Purchase ${creditsToBuy} credits`,
         order_id: orderId,
-        handler: async function (response: any) {
+        handler: async function (response: { razorpay_payment_id: string; razorpay_signature: string }) {
           // 4. Verify payment
           const verifyRes = await fetch('/api/payment/verify', {
             method: 'POST',
@@ -173,7 +210,7 @@ export default function ProfilePage() {
 
           const data = await verifyRes.json()
           if (data.success) {
-            toast.success('Payment successful — credits added ⚡')
+            toast.success('Payment successful â€” credits added âš¡')
             fetchUserData()
           } else {
             toast.error('Payment verification failed.')
@@ -191,8 +228,9 @@ export default function ProfilePage() {
 
       const rzp = new window.Razorpay(options)
       rzp.open()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to initiate payment')
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(errorMessage || 'Failed to initiate payment')
     } finally {
       setPayingFor(null)
     }
@@ -258,7 +296,7 @@ export default function ProfilePage() {
                   disabled={billingLoading}
                   className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-sm font-bold transition-all"
                 >
-                    {billingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Use My Location 📍'}
+                    {billingLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Use My Location ðŸ“'}
                 </button>
             </div>
 
@@ -350,7 +388,7 @@ export default function ProfilePage() {
                             <plan.icon className="w-6 h-6" />
                         </div>
                         <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                        <div className="text-4xl font-bold tracking-tight mb-6">₹{plan.price}</div>
+                        <div className="text-4xl font-bold tracking-tight mb-6">â‚¹{plan.price}</div>
                         
                         <div className="space-y-4 mb-10 flex-grow">
                              <div className="flex items-center gap-3 text-sm text-zinc-400">
@@ -402,7 +440,7 @@ export default function ProfilePage() {
                                     transactions.map((t) => (
                                         <tr key={t.id} className="hover:bg-white/5 transition-colors">
                                             <td className="px-8 py-5 font-mono text-zinc-400">{t.order_id || '---'}</td>
-                                            <td className="px-8 py-5 font-bold">₹{t.amount}</td>
+                                            <td className="px-8 py-5 font-bold">â‚¹{t.amount}</td>
                                             <td className="px-8 py-5 text-indigo-400 font-bold">+{t.credits_added}</td>
                                             <td className="px-8 py-5">
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${t.status === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
@@ -417,6 +455,89 @@ export default function ProfilePage() {
                                 )}
                             </tbody>
                         </table>
+                   </div>
+              </div>
+        </div>
+
+        {/* API Key Management */}
+        <div className="space-y-8 pt-10">
+              <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold flex items-center gap-3">
+                        <Zap className="w-6 h-6 text-yellow-500" />
+                        API Keys (Developer)
+                  </h2>
+                  <button 
+                    onClick={async () => {
+                        const res = await fetch('/api/user/keys', { method: 'POST' })
+                        const data = await res.json()
+                        if (data.apiKey) {
+                            toast.success('New API Key generated!')
+                            fetchKeys()
+                        } else {
+                            toast.error(data.error || 'Failed to generate key')
+                        }
+                    }}
+                    className="px-4 py-2 rounded-full bg-indigo-500 text-white text-xs font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/20"
+                  >
+                      Generate Key
+                  </button>
+              </div>
+              
+              <div className="glass rounded-[32px] border border-white/5 overflow-hidden">
+                   <div className="p-8 space-y-6">
+                        <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-medium leading-relaxed">
+                            Use these keys to integrate Lanora AI into your own applications or UniversalAI plugins. 
+                            Endpoint: <code className="bg-black/50 px-2 py-1 rounded ml-1">POST /api/v1/chat</code>
+                        </div>
+
+                        {keys.length === 0 ? (
+                            <div className="py-10 text-center text-zinc-600 font-medium">No API keys yet.</div>
+                        ) : (
+                            <div className="space-y-4">
+                                {keys.map((k: UserKey) => (
+                                    <div key={k.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-mono text-sm text-zinc-400">
+                                                    {k.api_key.substring(0, 10)}...{k.api_key.substring(k.api_key.length - 4)}
+                                                </span>
+                                                <button 
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(k.api_key)
+                                                        toast.success('Key copied to clipboard!')
+                                                    }}
+                                                    className="p-1.5 rounded-lg bg-white/5 text-zinc-500 hover:text-white transition-colors"
+                                                >
+                                                    <CreditCard className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-bold">
+                                                Created on {new Date(k.created_at).toLocaleDateString()}
+                                                {k.last_used_at && ` â€¢ Last used: ${new Date(k.last_used_at).toLocaleDateString()}`}
+                                            </p>
+                                        </div>
+                                        <button 
+                                            onClick={async () => {
+                                                if (confirm('Are you sure? This will immediately disable any tools using this key.')) {
+                                                    const res = await fetch('/api/user/keys', {
+                                                        method: 'DELETE',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ id: k.id })
+                                                    })
+                                                    if (res.ok) {
+                                                        toast.success('Key deleted')
+                                                        fetchKeys()
+                                                    }
+                                                }
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            Delete Key
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                    </div>
               </div>
         </div>
@@ -446,3 +567,4 @@ export default function ProfilePage() {
     </div>
   )
 }
+

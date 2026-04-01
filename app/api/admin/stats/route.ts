@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession()
-    const isAdmin = (session as any)?.role === 'admin' || session?.email === (process.env.ADMIN_EMAIL || 'admin@lanora.ai')
+    const session = await getSession() as { role?: string; email?: string } | null
+    const isAdmin = session?.role === 'admin' || session?.email === (process.env.ADMIN_EMAIL || 'admin@lanora.ai')
 
     if (!isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -16,8 +16,8 @@ export async function GET(request: Request) {
     const tab = searchParams.get('tab') || 'souls'
     const search = searchParams.get('search') || ''
 
-    let data: any = []
-    let counts: any = {}
+    let data: unknown = []
+    let counts: { totalSouls: number; liveMessages: number; allMsgs: number } = { totalSouls: 0, liveMessages: 0, allMsgs: 0 }
 
     // Fetch Stats
     const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
@@ -50,16 +50,17 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ data, counts })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Admin API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
     try {
-        const session = await getSession()
-        const isAdmin = (session as any)?.role === 'admin' || session?.email === (process.env.ADMIN_EMAIL || 'admin@lanora.ai')
+        const session = await getSession() as { role?: string; email?: string } | null
+        const isAdmin = session?.role === 'admin' || session?.email === (process.env.ADMIN_EMAIL || 'admin@lanora.ai')
 
         if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -81,7 +82,8 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ success: true })
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 }

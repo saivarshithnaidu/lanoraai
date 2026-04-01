@@ -2,16 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, Key, Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+interface ApiKey {
+  id: string
+  provider: string
+  usage_count: number
+  status: string
+}
+
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<any[]>([])
+  const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [addingKey, setAddingKey] = useState(false)
   const [newKey, setNewKey] = useState({ provider: 'openrouter', api_key: '' })
-
-  const supabase = createClient()
 
   useEffect(() => {
     fetchKeys()

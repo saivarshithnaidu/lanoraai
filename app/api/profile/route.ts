@@ -23,15 +23,22 @@ export async function GET(request: Request) {
     const isAdmin = session.email === adminEmail
     
     // Virtual profile if admin exists but db profile row doesn't
-    let finalProfile = profile as any
+    interface Profile {
+      email?: string | null;
+      name?: string | null;
+      role?: string | null;
+      credits: number;
+    }
+
+    let finalProfile: Profile | null = profile as unknown as Profile | null
 
     if (!profile) {
       if (isAdmin) {
-          finalProfile = { email: session.email, name: session.name, credits: 99999, role: 'admin' }
+          finalProfile = { email: session?.email || '', name: session?.name || '', credits: 99999, role: 'admin' }
       } else {
           return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
       }
-    } else if (isAdmin) {
+    } else if (isAdmin && finalProfile) {
         finalProfile.role = 'admin'
     }
 
@@ -45,8 +52,10 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ profile: finalProfile, transactions: transactions || [], user: session })
 
-  } catch (error: any) {
-    console.error('Profile fetch error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Profile fetch error:', errorMessage)
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+

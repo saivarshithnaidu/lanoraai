@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server'
+﻿import { createAdminClient } from '@/lib/supabase/server'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -18,7 +18,9 @@ export async function POST() {
         if (error) throw error
 
         return NextResponse.json({ success: true })
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
+

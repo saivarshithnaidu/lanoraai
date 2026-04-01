@@ -1,0 +1,180 @@
+﻿
+> lanora-ai@0.1.0 lint
+> eslint
+
+
+C:\lanoraaichatapp\lanora-ai\app\admin\keys\page.tsx
+   4:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars
+  71:15  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\logs\chat\page.tsx
+  2:25  warning  'User' is defined but never used         @typescript-eslint/no-unused-vars
+  2:41  warning  'Tag' is defined but never used          @typescript-eslint/no-unused-vars
+  2:46  warning  'ChevronDown' is defined but never used  @typescript-eslint/no-unused-vars
+  2:69  warning  'Zap' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\logs\error\page.tsx
+  2:23  warning  'User' is defined but never used         @typescript-eslint/no-unused-vars
+  2:39  warning  'Tag' is defined but never used          @typescript-eslint/no-unused-vars
+  2:44  warning  'ChevronDown' is defined but never used  @typescript-eslint/no-unused-vars
+  2:57  warning  'Activity' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\page.tsx
+  83:8  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\lanoraaichatapp\lanora-ai\app\api\ai\suggest-reply\route.ts
+   2:44  warning  'logToDB' is defined but never used                @typescript-eslint/no-unused-vars
+  76:14  warning  'e' is defined but never used                      @typescript-eslint/no-unused-vars
+  91:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\login\route.ts
+  63:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\logout\route.ts
+  6:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\billing\route.ts
+   5:27  warning  'request' is defined but never used                @typescript-eslint/no-unused-vars
+  29:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  72:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\conversations\route.ts
+  24:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  50:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\feed\posts\route.ts
+  22:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  51:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\feed\stories\route.ts
+  22:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  52:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\messages\clear\route.ts
+   5:28  warning  'request' is defined but never used                @typescript-eslint/no-unused-vars
+  25:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\messages\route.ts
+  41:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\create-order\route.ts
+  39:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\verify\route.ts
+  78:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\webhook\route.ts
+  71:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\conversations\route.ts
+  45:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  62:36  warning  'eError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  87:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\messages\route.ts
+  29:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  59:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\messages\seen\route.ts
+  30:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\route.ts
+  5:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\update\route.ts
+  34:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\verify-age\route.ts
+  22:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\referral\apply\route.ts
+  36:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\follow\route.ts
+  17:36  warning  'eError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  41:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  48:27  warning  'req' is defined but never used                    @typescript-eslint/no-unused-vars
+  67:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\profile\route.ts
+  32:35  warning  'fError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  53:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\report\route.ts
+  30:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\requests\route.ts
+  36:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  76:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\user\keys\route.ts
+  41:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\user\update-profile\route.ts
+  32:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\users\route.ts
+  41:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\v1\chat\route.ts
+    3:89  warning  'logError' is defined but never used               @typescript-eslint/no-unused-vars
+   39:46  warning  'stream' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  139:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\chat\page.tsx
+   348:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   394:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   411:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   427:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   440:14   warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   495:6    warning  React Hook useEffect has missing dependencies: 'supabase' and 'user?.id'. Either include them or remove the dependency array                                                                                                                                                             react-hooks/exhaustive-deps
+   513:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   532:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   569:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   599:16   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   678:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   716:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   877:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   877:33   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+   904:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   928:29   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   928:29   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1054:27   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1132:28   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1132:28   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1201:30   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1201:30   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1255:179  warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  1265:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1381:23   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1552:86   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1563:55   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1563:55   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1663:29   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\lanoraaichatapp\lanora-ai\app\login\page.tsx
+   5:10  warning  'Sparkles' is defined but never used               @typescript-eslint/no-unused-vars
+   9:10  warning  'createClient' is defined but never used           @typescript-eslint/no-unused-vars
+  70:11  warning  'errorMessage' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\page.tsx
+  187:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\lanoraaichatapp\lanora-ai\app\profile\page.tsx
+   57:9   warning  'supabase' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+   73:6   warning  React Hook useEffect has a missing dependency: 'fetchUserData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  110:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  129:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  155:16  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  160:9   warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  378:30  warning  'i' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\middleware.ts
+  73:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\run_db.ts
+  1:10  warning  'db' is defined but never used            @typescript-eslint/no-unused-vars
+  5:11  warning  'sql' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 99 problems (0 errors, 99 warnings)
+

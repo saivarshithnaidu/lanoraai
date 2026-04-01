@@ -1,0 +1,297 @@
+﻿
+> lanora-ai@0.1.0 lint
+> eslint
+
+
+C:\lanoraaichatapp\lanora-ai\app\admin\keys\page.tsx
+   5:24  warning  'Key' is defined but never used                @typescript-eslint/no-unused-vars
+   9:36  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  14:9   warning  'supabase' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  66:15  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\logs\chat\page.tsx
+  2:25  warning  'User' is defined but never used         @typescript-eslint/no-unused-vars
+  2:41  warning  'Tag' is defined but never used          @typescript-eslint/no-unused-vars
+  2:46  warning  'ChevronDown' is defined but never used  @typescript-eslint/no-unused-vars
+  2:69  warning  'Zap' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\logs\error\page.tsx
+  2:23  warning  'User' is defined but never used         @typescript-eslint/no-unused-vars
+  2:39  warning  'Tag' is defined but never used          @typescript-eslint/no-unused-vars
+  2:44  warning  'ChevronDown' is defined but never used  @typescript-eslint/no-unused-vars
+  2:57  warning  'Activity' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\admin\page.tsx
+    9:3    warning  'Zap' is defined but never used                                                                                                @typescript-eslint/no-unused-vars
+   12:3    warning  'Mail' is defined but never used                                                                                               @typescript-eslint/no-unused-vars
+   14:3    warning  'ArrowRight' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+   15:3    warning  'ShieldAlert' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   17:3    warning  'Trash2' is defined but never used                                                                                             @typescript-eslint/no-unused-vars
+   18:3    warning  'CheckCircle2' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   19:3    warning  'XCircle' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+   25:18   warning  'AnimatePresence' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   32:40   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+   33:38   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+   34:52   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+   50:91   warning  'payload' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+   57:8    warning  React Hook useEffect has missing dependencies: 'fetchData' and 'supabase'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+   78:73   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+  106:21   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+  224:174  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                react/no-unescaped-entities
+  224:188  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                react/no-unescaped-entities
+  228:171  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                react/no-unescaped-entities
+  228:186  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                react/no-unescaped-entities
+  256:57   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+  277:45   error    Unexpected any. Specify a different type                                                                                       @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\admin\stats\route.ts
+   8:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  53:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  84:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\ai\suggest-reply\route.ts
+   2:44  warning  'logToDB' is defined but never used       @typescript-eslint/no-unused-vars
+  76:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  90:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\callback\google\route.ts
+   60:30  error    'selectError' is never reassigned. Use 'const' instead  prefer-const
+   60:30  warning  'selectError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  125:19  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\login\route.ts
+  62:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\logout\route.ts
+  6:28  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\app\api\auth\signup\route.ts
+  64:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\billing\route.ts
+   5:27  warning  'request' is defined but never used       @typescript-eslint/no-unused-vars
+  28:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  70:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\chat\route.ts
+   27:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  210:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  254:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\conversations\route.ts
+  23:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  48:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\feed\posts\route.ts
+  21:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\feed\stories\route.ts
+  21:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\messages\clear\route.ts
+   5:28  warning  'request' is defined but never used       @typescript-eslint/no-unused-vars
+  24:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\messages\route.ts
+  40:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\create-order\route.ts
+  38:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\verify\route.ts
+  77:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\payment\webhook\route.ts
+  70:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\conversations\route.ts
+  44:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  61:36  warning  'eError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  85:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\messages\route.ts
+  28:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\people-chat\messages\seen\route.ts
+  29:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\route.ts
+   5:27  warning  'request' is defined but never used       @typescript-eslint/no-unused-vars
+  26:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  48:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\update\route.ts
+  33:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\profile\verify-age\route.ts
+  21:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\referral\apply\route.ts
+  35:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\follow\route.ts
+  17:36  warning  'eError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  40:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  47:27  warning  'req' is defined but never used              @typescript-eslint/no-unused-vars
+  65:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\profile\route.ts
+  32:35  warning  'fError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  52:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\report\route.ts
+  29:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\social\requests\route.ts
+  35:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  74:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\user\keys\route.ts
+  40:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\user\update-profile\route.ts
+  31:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\users\route.ts
+  40:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\api\v1\chat\route.ts
+    3:89  warning  'logError' is defined but never used         @typescript-eslint/no-unused-vars
+   39:46  warning  'stream' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   89:23  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  137:19  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\chat\page.tsx
+    14:3    warning  'CreditCard' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+    21:14   warning  'HistoryIcon' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+    26:3    warning  'MoreVertical' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    27:3    warning  'ChevronRight' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+    33:3    warning  'Check' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+    50:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    51:42   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    56:54   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    61:66   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    63:56   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    64:56   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    70:66   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    71:10   warning  'loadingProfile' is assigned a value but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    72:58   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    73:58   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    79:36   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+    84:10   warning  'showOnboarding' is assigned a value but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   146:6    warning  React Hook useEffect has missing dependencies: 'fetchConversations', 'fetchPeopleConversations', and 'router'. Either include them or remove the dependency array                                                                                                                        react-hooks/exhaustive-deps
+   220:49   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   221:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   239:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   256:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   302:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   319:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   335:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   349:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   356:29   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   405:6    warning  React Hook useEffect has missing dependencies: 'supabase' and 'user?.id'. Either include them or remove the dependency array                                                                                                                                                             react-hooks/exhaustive-deps
+   423:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   442:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   455:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   479:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   509:16   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   563:14   warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   563:21   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   591:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   603:9    warning  'updateOnboarding' is assigned a value but never used                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   605:32   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   619:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   648:14   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   653:10   warning  'isSmiling' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   802:81   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   803:29   warning  'lastMsg' is assigned a value but never used                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   818:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   818:33   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+   845:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   845:33   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+   869:29   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   869:29   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+   985:136  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   994:119  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   995:27   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+   995:27   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+   995:133  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  1005:151  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  1026:61   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  1069:28   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1069:28   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1138:30   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1138:30   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1173:145  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  1192:179  warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  1202:33   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1202:33   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1318:23   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1318:23   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1485:92   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  1489:86   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1489:86   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1500:55   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1500:55   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1600:29   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  1600:29   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  1631:25   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  1631:100  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+
+C:\lanoraaichatapp\lanora-ai\app\login\page.tsx
+   5:10  warning  'Sparkles' is defined but never used      @typescript-eslint/no-unused-vars
+   9:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars
+  69:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\onboarding\page.tsx
+  59:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\app\page.tsx
+   88:47   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+   88:95   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+   94:34   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  100:34   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  100:78   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  100:159  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  187:13   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\lanoraaichatapp\lanora-ai\app\profile\page.tsx
+   13:15  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   18:42  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   19:52  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   32:36  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   33:9   warning  'supabase' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+   49:6   warning  React Hook useEffect has a missing dependency: 'fetchUserData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   73:21  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   85:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  104:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  130:16  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  135:9   warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  174:44  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  206:21  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  352:30  warning  'i' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+  471:47  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\lib\api-pool.ts
+  48:119  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\lib\jwt.ts
+  6:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\lanoraaichatapp\lanora-ai\middleware.ts
+  73:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\lanoraaichatapp\lanora-ai\run_db.ts
+  1:10  warning  'db' is defined but never used            @typescript-eslint/no-unused-vars
+  5:11  warning  'sql' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 202 problems (106 errors, 96 warnings)
+

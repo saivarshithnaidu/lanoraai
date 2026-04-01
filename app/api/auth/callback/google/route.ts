@@ -57,11 +57,14 @@ export async function GET(request: Request) {
     if (process.env.NODE_ENV === 'development') console.log('[Auth Debug] User authenticated:', email)
 
     // 3. Upsert user in profiles table
-    let { data: user, error: selectError } = await db
+    // 3. Upsert user in profiles table
+    const { data: userData } = await db
       .from('profiles')
       .select('*')
       .eq('email', email)
       .single()
+
+    let user = userData
 
     if (!user) {
       if (process.env.NODE_ENV === 'development') console.log('[Auth Debug] Creating new user profile')
@@ -122,8 +125,10 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(`${origin}/chat`)
 
-  } catch (error: any) {
-    console.error('[Auth Error] Manual OAuth failed:', error.message || error)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Auth Error] Manual OAuth failed:', errorMessage)
     return NextResponse.redirect(`${origin}/login?error=google_auth_failed`)
   }
 }
+

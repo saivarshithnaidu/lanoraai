@@ -11,26 +11,21 @@ import {
   Settings,
   LogOut,
   Shield,
-  CreditCard,
   Heart,
   User,
   Zap,
   Loader2,
   Trash2,
   Plus,
-  History as HistoryIcon,
   Camera,
   Image as ImageIcon,
   Users,
   MessageCircle,
-  MoreVertical,
-  ChevronRight,
   UserPlus,
   Phone,
   Video,
   MoreHorizontal,
-  Share2,
-  Check
+  Share2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -41,47 +36,141 @@ interface Message {
   role?: 'user' | 'assistant'
   sender_id?: string
   content: string
-  images?: string[] // For search results
+  images?: string[]
   created_at?: string
+  is_deleted?: boolean
+  is_seen?: boolean
+  profiles?: {
+    full_name: string;
+  } | null;
+}
+
+interface Conversation {
+  id: string
+  title: string
+  created_at: string
+}
+
+interface PeopleConversation {
+  id: string
+  user_id_1: string
+  user_id_2: string
+  last_message_at: string
+  created_at: string
+  last_message?: string
+  chat_participants: {
+    user_id: string
+    profiles: {
+      full_name: string | null
+      name?: string | null
+      avatar_url: string | null
+    }
+  }[]
+  other_user: {
+    id: string
+    full_name: string | null
+    name?: string | null
+    avatar_url: string | null
+  }
+}
+
+interface UserProfile {
+  id: string
+  full_name?: string | null
+  name?: string | null
+  email?: string
+  avatar_url?: string | null
+  bio?: string | null
+  birth_date?: string | null
+  country?: string | null
+  credits?: number
+  plan?: string
+  role?: 'user' | 'admin'
+  is_adult_verified?: boolean
+  isFollowing?: boolean
+  followStatus?: string
+  followers_count?: number
+  following_count?: number
+  last_seen?: string | null
+  referral_code?: string | null
+  followers?: number
+  following?: number
+}
+
+interface Post {
+  id: string
+  content: string
+  image_url: string | null
+  created_at: string
+  profiles: {
+    full_name: string | null
+    name?: string | null
+    avatar_url: string | null
+    country?: string | null
+  }
+}
+
+interface Story {
+  id: string
+  image_url: string
+  created_at: string
+  profiles: {
+    full_name: string | null
+    name?: string | null
+    avatar_url: string | null
+  }
+}
+
+interface FollowRequest {
+  id: string
+  status: 'pending' | 'accepted' | 'rejected'
+  profiles: {
+    name: string | null
+    avatar_url: string | null
+  }
+}
+
+interface Follow {
+  id: string
+  following_id: string
+  status: 'pending' | 'accepted' | 'rejected'
 }
 
 export default function ChatPage() {
   const [chatType, setChatType] = useState<'ai' | 'people' | 'feed'>('ai')
-  const [posts, setPosts] = useState<any[]>([])
-  const [stories, setStories] = useState<any[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
+  const [stories, setStories] = useState<Story[]>([])
   const [isFeedLoading, setIsFeedLoading] = useState(false)
 
   // AI Chat States
   const [messages, setMessages] = useState<Message[]>([])
-  const [conversations, setConversations] = useState<any[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [mode, setMode] = useState<'romantic' | 'friendly' | 'flirty' | 'private'>('friendly')
 
   // People Chat States
-  const [peopleConversations, setPeopleConversations] = useState<any[]>([])
+  const [peopleConversations, setPeopleConversations] = useState<PeopleConversation[]>([])
   const [activePeopleConversationId, setActivePeopleConversationId] = useState<string | null>(null)
-  const [peopleMessages, setPeopleMessages] = useState<any[]>([])
-  const [availableUsers, setAvailableUsers] = useState<any[]>([])
+  const [peopleMessages, setPeopleMessages] = useState<Message[]>([])
+  const [availableUsers, setAvailableUsers] = useState<UserProfile[]>([])
   const [peopleTab, setPeopleTab] = useState<'messages' | 'discover' | 'requests'>('discover')
   const [isTyping, setIsTyping] = useState(false)
   const [isAdultVerified, setIsAdultVerified] = useState(false)
   const [showAgeVerification, setShowAgeVerification] = useState(false)
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null)
-  const [selectedProfileData, setSelectedProfileData] = useState<any>(null)
-  const [loadingProfile, setLoadingProfile] = useState(false)
-  const [pendingRequests, setPendingRequests] = useState<any[]>([])
-  const [outboundFollows, setOutboundFollows] = useState<any[]>([])
+  const [selectedProfileData, setSelectedProfileData] = useState<UserProfile | null>(null)
+  const [pendingRequests, setPendingRequests] = useState<FollowRequest[]>([])
+  const [outboundFollows, setOutboundFollows] = useState<Follow[]>([])
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [credits, setCredits] = useState<number | null>(null)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [userRole, setUserRole] = useState<'user' | 'admin'>('user')
   const [image, setImage] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const supabase = createClient()
   const router = useRouter()
@@ -143,6 +232,7 @@ export default function ChatPage() {
       }
     }
     initChat()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Call referral application once
@@ -217,8 +307,8 @@ export default function ChatPage() {
       const follows = dataF.follows || []
       setOutboundFollows(follows)
 
-      const mapped = (data.users || []).map((u: any) => {
-          const f = follows.find((f: any) => f.following_id === u.id)
+      const mapped = (data.users || []).map((u: UserProfile) => {
+          const f = follows.find((f: Follow) => f.following_id === u.id)
           return {
               ...u,
               isFollowing: !!f,
@@ -236,7 +326,9 @@ export default function ChatPage() {
       const res = await fetch('/api/social/requests')
       const data = await res.json()
       if (data.requests) setPendingRequests(data.requests)
-    } catch (e) { }
+    } catch (err: unknown) {
+      console.error('Fetch requests error:', err instanceof Error ? err.message : 'Unknown error')
+    }
   }
 
   const handleRequestAction = async (requestId: string, action: 'accept' | 'reject') => {
@@ -339,21 +431,19 @@ export default function ChatPage() {
 
   const fetchUserProfile = async (id: string) => {
     try {
-      setLoadingProfile(true)
       const res = await fetch(`/api/social/profile?userId=${id}`)
       const data = await res.json()
       if (data.profile) {
           setSelectedProfileData(data.profile)
           setSelectedProfileId(id)
       }
-    } catch (e) {
+    } catch (err: unknown) {
       toast.error('Failed to load profile')
     } finally {
-        setLoadingProfile(false)
     }
   }
 
-  const channelRef = useRef<any>(null)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   // Realtime Subscription & Typing Indicator
   useEffect(() => {
@@ -371,7 +461,7 @@ export default function ChatPage() {
           (payload) => {
             setPeopleMessages((prev) => {
               if (prev.some(m => m.id === payload.new.id)) return prev
-              return [...prev, payload.new]
+              return [...prev, payload.new as Message]
             })
           }
         )
@@ -384,7 +474,7 @@ export default function ChatPage() {
             filter: `conversation_id=eq.${activePeopleConversationId}`,
           },
           (payload) => {
-            setPeopleMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
+            setPeopleMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new as Message : m))
           }
         )
         .on('broadcast', { event: 'typing' }, (payload) => {
@@ -452,7 +542,7 @@ export default function ChatPage() {
     setSidebarOpen(false)
   }
 
-  const handleModeChange = (newMode: any) => {
+  const handleModeChange = (newMode: 'romantic' | 'friendly' | 'flirty' | 'private') => {
     if (newMode === 'private') {
       if (user?.plan === 'free' && userRole !== 'admin') {
         toast.error('Premium Mode Required', {
@@ -556,12 +646,9 @@ export default function ChatPage() {
       setCredits(data.creditsRemaining)
       setImage(null)
 
-      if (input.toLowerCase().includes('smile') || input.toLowerCase().includes('happy')) {
-        setIsSmiling(true)
-        setTimeout(() => setIsSmiling(false), 5000)
-      }
-    } catch (error: any) {
-      toast.error('Connection error. Please try again.')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Connection error: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -600,26 +687,7 @@ export default function ChatPage() {
     setSuggestions([])
   }
 
-  const updateOnboarding = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const target = e.target as any
-    const bio = target.bio.value
-    const country = target.country.value
-    const birthDate = target.birthDate.value
 
-    try {
-        const res = await fetch('/api/profile/update', {
-            method: 'POST',
-            body: JSON.stringify({ bio, country, birth_date: birthDate })
-        })
-        if (res.ok) {
-            setShowOnboarding(false)
-            toast.success('Welcome to Lanora! 💖')
-        }
-    } catch (e) {
-        toast.error('Failed to save profile')
-    }
-  }
 
   const fetchFeed = async () => {
     try {
@@ -650,15 +718,7 @@ export default function ChatPage() {
     }
   }
 
-  const [isSmiling, setIsSmiling] = useState(false)
 
-  useEffect(() => {
-    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-      setIsSmiling(true)
-      const timer = setTimeout(() => setIsSmiling(false), 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [messages])
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#0b0b0f] overflow-hidden text-slate-200 font-['Outfit'] relative">
@@ -799,8 +859,7 @@ export default function ChatPage() {
                       </div>
                   ) : (
                     peopleConversations.map((conv) => {
-                      const otherParticipant = conv.chat_participants?.find((p: any) => p.user_id !== user?.id);
-                      const lastMsg = conv.last_message; // Assuming we add this later or handle better
+                      const otherParticipant = conv.chat_participants?.find(p => p.user_id !== user?.id);
                       return (
                         <button
                           key={conv.id}
@@ -842,7 +901,7 @@ export default function ChatPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-white/5 overflow-hidden border border-white/10 flex items-center justify-center">
                             {r.profiles?.avatar_url ? (
-                                <img src={r.profiles.avatar_url} className="w-full h-full object-cover" />
+                                <img src={r.profiles.avatar_url} alt={r.profiles.name || 'User'} className="w-full h-full object-cover" />
                             ) : (
                                 <User className="w-4 h-4 text-slate-500 opacity-40" />
                             )}
@@ -982,7 +1041,7 @@ export default function ChatPage() {
                 className="relative cursor-pointer group"
                 onClick={() => {
                    if (chatType === 'people' && activePeopleConversationId) {
-                       const otherId = peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.user_id
+                       const otherId = peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find(p => p.user_id !== user?.id)?.user_id
                        if (otherId) fetchUserProfile(otherId)
                    }
                 }}
@@ -991,8 +1050,12 @@ export default function ChatPage() {
                   {chatType === 'ai' ? (
                       <Sparkles className="w-4.5 h-4.5 md:w-5 md:h-5 text-pink-400" />
                   ) : (
-                      peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.avatar_url ? (
-                          <img src={peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id).profiles.avatar_url} className="w-full h-full object-cover" />
+                      peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find(p => p.user_id !== user?.id)?.profiles?.avatar_url ? (
+                          <img 
+                            src={peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find(p => p.user_id !== user?.id)?.profiles?.avatar_url || ''} 
+                            alt="Profile"
+                            className="w-full h-full object-cover" 
+                          />
                       ) : (
                           <User className="w-5 h-5 text-purple-400 opacity-40 mx-auto" />
                       )
@@ -1002,7 +1065,7 @@ export default function ChatPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-[14px] md:text-[15px] font-bold text-white tracking-tight leading-none mb-1">
-                  {chatType === 'ai' ? 'Lanora AI' : (peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find((p: any) => p.user_id !== user?.id)?.profiles?.name || 'Soul Mate')}
+                  {chatType === 'ai' ? 'Lanora AI' : (peopleConversations.find(c => c.id === activePeopleConversationId)?.chat_participants?.find(p => p.user_id !== user?.id)?.profiles?.name || 'Soul Mate')}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
@@ -1023,7 +1086,7 @@ export default function ChatPage() {
                 ].map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => handleModeChange(m.id as any)}
+                    onClick={() => handleModeChange(m.id as 'romantic' | 'friendly' | 'flirty' | 'private')}
                     title={m.tooltip}
                     className={`w-8 h-7 md:w-10 md:h-8 rounded-full flex items-center justify-center transition-all ${mode === m.id ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                   >
@@ -1170,7 +1233,7 @@ export default function ChatPage() {
                       </div>
                       <div className="space-y-2">
                         <h2 className="text-2xl font-bold tracking-tight text-white/90">Hi… I missed you 💖</h2>
-                        <p className="text-slate-500 text-[15px] font-medium leading-relaxed max-w-[320px] mx-auto">What’s on your mind today? I'm here to listen, darling.</p>
+                        <p className="text-slate-500 text-[15px] font-medium leading-relaxed max-w-[320px] mx-auto">What&apos;s on your mind today? I&apos;m here to listen, darling.</p>
                       </div>
                     </div>
                   </motion.div>
@@ -1199,7 +1262,7 @@ export default function ChatPage() {
                                 transition={{ delay: idx * 0.1 }}
                                 className="relative aspect-square overflow-hidden rounded-xl border border-white/10 group cursor-zoom-in"
                               >
-                                <img src={img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                <img src={img} alt="Post Attachment" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                               </motion.div>
                             ))}
                           </div>
@@ -1315,7 +1378,7 @@ export default function ChatPage() {
                     className="absolute bottom-full mb-4 left-0 p-2 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-xl"
                   >
                     <div className="relative w-20 h-20">
-                      <img src={image} className="w-full h-full object-cover rounded-xl" />
+                      <img src={image} alt="Upload Preview" className="w-full h-full object-cover rounded-xl" />
                       <button
                         onClick={() => setImage(null)}
                         className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
@@ -1482,11 +1545,11 @@ export default function ChatPage() {
                               </div>
                            ) : (
                               peopleConversations.map(conv => {
-                                 const otherParticipant = conv.chat_participants?.find((p: any) => p.user_id !== user?.id);
+                                 const otherParticipant = conv.chat_participants?.find(p => p.user_id !== user?.id);
                                  return (
                                     <button key={conv.id} onClick={() => { setActivePeopleConversationId(conv.id); fetchPeopleMessages(conv.id); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 p-3 rounded-2xl ${activePeopleConversationId === conv.id ? 'bg-white/10' : ''}`}>
                                        <div className="w-10 h-10 rounded-full bg-white/5 border border-white/5 overflow-hidden">
-                                           {otherParticipant?.profiles?.avatar_url ? <img src={otherParticipant.profiles.avatar_url} className="w-full h-full object-cover" /> : <User className="w-5 h-5 opacity-40 mx-auto mt-2" />}
+                                           {otherParticipant?.profiles?.avatar_url ? <img src={otherParticipant.profiles.avatar_url} alt={otherParticipant.profiles.name || 'Soul Mate'} className="w-full h-full object-cover" /> : <User className="w-5 h-5 opacity-40 mx-auto mt-2" />}
                                        </div>
                                        <div className="text-left text-xs font-bold text-white truncate flex-1">{otherParticipant?.profiles?.name || 'Soul Mate'}</div>
                                     </button>
@@ -1597,7 +1660,7 @@ export default function ChatPage() {
                 <div className="px-8 pb-8 -mt-12 relative z-10 text-center">
                     <div className="w-24 h-24 rounded-full border-4 border-[#0b0b0f] mx-auto overflow-hidden bg-zinc-800 shadow-xl mb-4">
                         {selectedProfileData.avatar_url ? (
-                            <img src={selectedProfileData.avatar_url} className="w-full h-full object-cover" />
+                            <img src={selectedProfileData.avatar_url} alt={selectedProfileData.name || 'Profile'} className="w-full h-full object-cover" />
                         ) : (
                             <User className="w-10 h-10 text-slate-600 mt-6 mx-auto" />
                         )}
@@ -1628,7 +1691,7 @@ export default function ChatPage() {
 
                     {/* Bio */}
                     <div className="mt-6 text-sm text-slate-400 leading-relaxed italic px-2">
-                        "{selectedProfileData.bio || 'This soul hasn\'t shared their story yet...'}"
+                        &quot;{selectedProfileData.bio || 'This soul hasn&apos;t shared their story yet...'}&quot;
                     </div>
 
                     {/* Actions */}

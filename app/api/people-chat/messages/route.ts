@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     if (error) throw error
 
     return NextResponse.json({ messages: messages || [] })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Fetch messages error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -54,8 +55,10 @@ export async function POST(req: Request) {
     if (error) throw error
 
     return NextResponse.json({ message })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Post message error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

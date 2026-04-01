@@ -6,32 +6,58 @@ import {
   Users, 
   MessageSquare, 
   Search, 
-  Zap,
   Globe,
   Clock,
-  Mail,
   Phone,
-  ArrowRight,
-  ShieldAlert,
   History,
-  Trash2,
-  CheckCircle2,
-  XCircle,
   Loader2,
   ShieldCheck,
   ZapOff
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
+
+interface Profile {
+  full_name: string | null;
+  email: string | null;
+  phone_number: string | null;
+  role: string | null;
+  last_login: string | null;
+  is_blocked: boolean | null;
+  ip_address: string | null;
+  credits: number | null;
+  id: string;
+}
+
+interface Log {
+  id: string;
+  created_at: string;
+  message: string;
+  response: string;
+  profiles: {
+    full_name: string;
+  } | null;
+}
+
+interface Message {
+  id: string;
+  created_at: string;
+  role: string;
+  content: string;
+  is_deleted?: boolean;
+  profiles: {
+    full_name: string;
+  } | null;
+}
 
 type Tab = 'souls' | 'pulse' | 'audit' | 'messages'
 
 export default function AdminOmniscence() {
     const [activeTab, setActiveTab] = useState<Tab>('souls')
     const [loading, setLoading] = useState(true)
-    const [users, setUsers] = useState<any[]>([])
-    const [logs, setLogs] = useState<any[]>([])
-    const [allMessages, setAllMessages] = useState<any[]>([])
+    const [users, setUsers] = useState<Profile[]>([])
+    const [logs, setLogs] = useState<Log[]>([])
+    const [allMessages, setAllMessages] = useState<Message[]>([])
     const [search, setSearch] = useState('')
     const [stats, setStats] = useState({ totalSouls: 0, liveMessages: 0, allMsgs: 0 })
 
@@ -44,17 +70,17 @@ export default function AdminOmniscence() {
         const channel = supabase
             .channel('admin_pulse')
             .on('postgres_changes', { event: 'INSERT', table: 'chat_logs', schema: 'public' }, (payload) => {
-                setLogs(prev => [payload.new, ...prev].slice(0, 50))
+                setLogs(prev => [payload.new as Log, ...prev].slice(0, 50))
                 setStats(prev => ({ ...prev, liveMessages: prev.liveMessages + 1 }))
             })
-            .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, (payload) => {
+            .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, () => {
                 // Refresh messages if one is added or deleted
                 if (activeTab === 'messages') fetchData()
             })
             .subscribe()
 
         return () => { supabase.removeChannel(channel) }
-    }, [activeTab, search])
+    }, [activeTab, search, supabase])
 
     const fetchData = async () => {
         setLoading(true)
@@ -67,22 +93,22 @@ export default function AdminOmniscence() {
             else if (activeTab === 'messages') setAllMessages(result.data || [])
             
             setStats(result.counts || { totalSouls: 0, liveMessages: 0, allMsgs: 0 })
-        } catch (e) {
-            console.error('Fetch error:', e)
+        } catch (error) {
+            console.error('Fetch error:', error)
             toast.error("Shield failed to retrieve data registry.")
         } finally {
             setLoading(false)
         }
     }
 
-    const handleAction = async (userId: string, action: string, value?: any) => {
+    const handleAction = async (userId: string, action: string, value?: string | number | null) => {
         let finalValue = value
         if (action === 'update_credits') {
             const currentVal = value?.toString() || '100'
             const newCreditsStr = prompt("New energy reserve level?", currentVal)
             if (newCreditsStr === null) return
             finalValue = parseInt(newCreditsStr)
-            if (isNaN(finalValue)) return
+            if (isNaN(finalValue as number)) return
         } else if (action === 'update_phone') {
             const currentVal = value?.toString() || ''
             const newPhone = prompt("Enter replacement phone number:", currentVal)
@@ -103,8 +129,9 @@ export default function AdminOmniscence() {
             } else {
                 throw new Error(result.error)
             }
-        } catch (e: any) {
-            toast.error(`Operation failure: ${e.message}`)
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+            toast.error(`Operation failure: ${errorMessage}`)
         }
     }
 
@@ -221,11 +248,11 @@ export default function AdminOmniscence() {
                                     <div className="grid md:grid-cols-2 gap-10">
                                         <div className="space-y-4">
                                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-pink-400/60 font-bold tracking-widest italic uppercase">Soul Input</div>
-                                            <div className="text-sm text-zinc-300 leading-relaxed font-medium bg-white/[0.02] p-5 rounded-[28px] border border-white/[0.03]">"{log.message}"</div>
+                                            <div className="text-sm text-zinc-300 leading-relaxed font-medium bg-white/[0.02] p-5 rounded-[28px] border border-white/[0.03]">&quot;{log.message}&quot;</div>
                                         </div>
                                         <div className="space-y-4">
                                             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-purple-400/60 font-bold tracking-widest italic uppercase">Lanora Echo</div>
-                                            <div className="text-sm text-zinc-400 leading-relaxed font-bold bg-[#9b5cff]/5 p-5 rounded-[28px] border border-white/[0.03]">"{log.response}"</div>
+                                            <div className="text-sm text-zinc-400 leading-relaxed font-bold bg-[#9b5cff]/5 p-5 rounded-[28px] border border-white/[0.03]">&quot;{log.response}&quot;</div>
                                         </div>
                                     </div>
                                 </div>
@@ -253,14 +280,14 @@ export default function AdminOmniscence() {
     )
 }
 
-function PulseCard({ icon: Icon, label, value, color }: any) {
+function PulseCard({ icon: Icon, label, value, color }: { icon: React.ElementType, label: string, value: string | number, color: 'pink' | 'purple' | 'green' }) {
     const colors = {
         pink: 'from-pink-500/20 to-pink-500/5 text-pink-400 border-pink-500/10',
         purple: 'from-purple-500/20 to-purple-500/5 text-purple-400 border-purple-500/10',
         green: 'from-green-500/20 to-green-500/5 text-green-400 border-green-500/10'
     }
     return (
-        <div className={`glass p-8 rounded-[48px] border bg-gradient-to-br ${colors[color as keyof typeof colors]} shadow-2xl shadow-black/20`}>
+        <div className={`glass p-8 rounded-[48px] border bg-gradient-to-br ${colors[color]} shadow-2xl shadow-black/20`}>
             <div className="flex items-center gap-6">
                 <div className={`p-4 rounded-[28px] bg-white/5 border border-white/5`}>
                     <Icon className="w-8 h-8" />
@@ -274,7 +301,7 @@ function PulseCard({ icon: Icon, label, value, color }: any) {
     )
 }
 
-function TabBtn({ active, label, onClick }: any) {
+function TabBtn({ active, label, onClick }: { active: boolean, label: string, onClick: () => void }) {
     return (
         <button 
             onClick={onClick}

@@ -24,7 +24,13 @@ export async function POST(req: Request) {
     const adminEmail = process.env.ADMIN_EMAIL
     const isAdmin = session.email === adminEmail || (profile && profile.role === 'admin')
 
-    let finalProfile = profile as any
+    interface Profile {
+      credits: number;
+      role: string | null;
+      plan?: string;
+    }
+
+    let finalProfile: Profile | null = profile as Profile | null
 
     if (!profile) {
       if (isAdmin) {
@@ -32,11 +38,11 @@ export async function POST(req: Request) {
       } else {
         return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
       }
-    } else if (isAdmin) {
+    } else if (isAdmin && finalProfile) {
       finalProfile.role = 'admin'
     }
 
-    if (!isAdmin && finalProfile.credits <= 0) {
+    if (!finalProfile || (!isAdmin && finalProfile.credits <= 0)) {
       return NextResponse.json(
         { error: 'Insufficient credits', needsPayment: true },
         { status: 402 }
@@ -66,10 +72,12 @@ export async function POST(req: Request) {
       ? recentMessages.map(m => `${m.role === 'user' ? 'User' : 'Lanora'}: ${m.content}`).reverse().join('\n')
       : ''
 
-    // 2.2 Intent Detection for Image Search
-    const searchIntents = ['show', 'image', 'photo', 'pic', 'wallpaper', 'looking for']
-    const isImageSearch = searchIntents.some(intent => userMessage.toLowerCase().includes(intent)) &&
-      !userMessage.toLowerCase().includes('analysis') // Avoid vision conflict
+    // 2.2 Intent Detection for Image Search - refined to avoid false positives (e.g., 'shower', 'complaints about images')
+    const isImageSearch = (
+      /\b(show|find|search|send|get)\s+(me|us)?\s+(a|an|some)?\s*(image|photo|pic|picture|wallpaper|moment)\b/i.test(userMessage) ||
+      /\b(image|photo|pic|picture|wallpaper|moment)\s+(of|about|for)\b/i.test(userMessage) ||
+      /\blooking\s+for\s+(a|an|some)?\s*(image|photo|pic|wallpaper)\b/i.test(userMessage)
+    ) && !userMessage.toLowerCase().includes('analysis') && !userMessage.toLowerCase().includes('why')
 
     const searchImages = async (query: string) => {
       try {
@@ -84,9 +92,9 @@ export async function POST(req: Request) {
         }
         const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=6&client_id=${accessKey}`)
         const data = await res.json()
-        return data.results.map((r: any) => r.urls.regular)
-      } catch (e) {
-        console.error('Image search failed:', e)
+        return data.results.map((r: { urls: { regular: string } }) => r.urls.regular)
+      } catch (error: unknown) {
+        console.error('Image search failed:', error)
         return []
       }
     }
@@ -163,9 +171,9 @@ export async function POST(req: Request) {
           ? (apiKey.provider === 'openrouter' ? 'openai/gpt-4o' : 'gpt-4o')
           : (apiKey.provider === 'openrouter' ? 'openai/gpt-4o-mini' : (apiKey.provider === 'groq' ? 'llama3-8b-8192' : 'gpt-4o-mini'))
 
-        const payload: any[] = [
+        const payload: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
           { role: 'system', content: systemPrompt },
-          ...messages.slice(0, -1) // All previous messages
+          ...messages.slice(0, -1)
         ]
 
         // Handle Image Vision or Normal Chat
@@ -193,9 +201,9 @@ export async function POST(req: Request) {
         let searchResults: string[] = []
         if (isImageSearch) {
           // Extract search query from user message or AI response
-          searchResults = await searchImages(userMessage.replace(/show|image|photo|pic|wallpaper|me|a|an/gi, '').trim())
+          searchResults = await searchImages(userMessage.replace(/\b(show|find|search|send|get|me|us|a|an|some|image|photo|pic|picture|wallpaper|moment|of|about|for)\b/gi, '').trim())
           if (searchResults.length > 0) {
-            aiResponse = `I found these beautiful moments for you 💖\n\nJSON_START${JSON.stringify({ type: 'images', images: searchResults })}JSON_END`
+            aiResponse = `${aiResponse}\n\nJSON_START${JSON.stringify({ type: 'images', images: searchResults })}JSON_END`
           }
         }
 
@@ -205,13 +213,17 @@ export async function POST(req: Request) {
         await logToDB(userId, 'chat', 'Successful AI response generated', { model, provider: apiKey.provider, tokens })
         break
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         attempts++
-        lastError = error.message
-        await logToDB(userId, 'error', `API Failure (Attempt ${attempts}): ${error.message}`, { provider: apiKey.provider, keyId: apiKey.id })
-        await logError(`API Failure (Attempt ${attempts}): ${error.message}`, error.stack)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const errorStack = error instanceof Error ? error.stack : undefined
+        const errorStatus = (error as { status?: number }).status
 
-        if (error.status === 401 || error.status === 429) {
+        lastError = errorMessage
+        await logToDB(userId, 'error', `API Failure (Attempt ${attempts}): ${errorMessage}`, { provider: apiKey.provider, keyId: apiKey.id })
+        await logError(`API Failure (Attempt ${attempts}): ${errorMessage}`, errorStack)
+
+        if (errorStatus === 401 || errorStatus === 429) {
           await markKeyAsFailed(apiKey.id)
         }
       }
@@ -249,9 +261,11 @@ export async function POST(req: Request) {
       role: finalProfile.role
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
     console.error('Chat error:', error)
-    await logError(`Critical Chat Error: ${error.message}`, error.stack)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+    await logError(`Critical Chat Error: ${errorMessage}`, errorStack)
+    return NextResponse.json({ error: errorMessage || 'Internal server error' }, { status: 500 })
   }
 }

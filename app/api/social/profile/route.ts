@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -49,8 +49,10 @@ export async function GET(req: Request) {
             following: followingCount || 0
         } 
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Fetch profile error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { logToDB } from '@/lib/api-pool'
 import { getSession } from '@/lib/jwt'
 import crypto from 'crypto'
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       .eq('id', userId)
 
     // 5. Log success
-    await logToDB(userId, 'payment', `Successful payment of ₹${transaction.amount}`, { 
+    await logToDB(userId, 'payment', `Successful payment of â‚¹${transaction.amount}`, { 
         orderId, 
         paymentId, 
         creditsAdded: transaction.credits_added,
@@ -74,8 +74,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, newCredits })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Payment verification error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

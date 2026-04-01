@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'
+﻿import { db } from '@/lib/db'
 import { getSession } from '@/lib/jwt'
 import { NextResponse } from 'next/server'
 
@@ -32,7 +32,8 @@ export async function GET() {
     if (rError) throw rError
 
     return NextResponse.json({ success: true, requests: requests || [] })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Fetch requests error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
         .eq('following_id', currentUserId) // Safety check
 
       if (fError) throw fError
-      return NextResponse.json({ success: true, message: 'Request accepted ✅' })
+      return NextResponse.json({ success: true, message: 'Request accepted âœ…' })
     } else if (action === 'reject') {
       const { error: fError } = await db
         .from('follows')
@@ -71,8 +72,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Request action error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+

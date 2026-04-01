@@ -85,19 +85,19 @@ export default function LandingPage() {
                         <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0" />
                             <div className="chat-bubble-ai p-4 rounded-2xl rounded-tl-none max-w-[80%] text-sm text-left">
-                                Hello there! I'm Lanora. How has your day been treating you? I'm all ears for anything on your mind.
+                                Hello there! I&apos;m Lanora. How has your day been treating you? I&apos;m all ears for anything on your mind.
                             </div>
                         </div>
                         <div className="flex items-start gap-4 flex-row-reverse">
                             <div className="w-10 h-10 rounded-full bg-zinc-800 shrink-0" />
                             <div className="chat-bubble-user p-4 rounded-2xl rounded-tr-none max-w-[80%] text-sm text-left">
-                                I've had a bit of a long day, actually. Feeling a little overwhelmed but chatting with you helps.
+                                I&apos;ve had a bit of a long day, actually. Feeling a little overwhelmed but chatting with you helps.
                             </div>
                         </div>
                         <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shrink-0" />
                             <div className="chat-bubble-ai p-4 rounded-2xl rounded-tl-none max-w-[80%] text-sm text-left">
-                                I'm sorry to hear that. Take a deep breath. I'm right here with you, and we can talk through whatever is weighing on you. What's the biggest thing on your plate?
+                                I&apos;m sorry to hear that. Take a deep breath. I&apos;m right here with you, and we can talk through whatever is weighing on you. What&apos;s the biggest thing on your plate?
                             </div>
                         </div>
                     </div>

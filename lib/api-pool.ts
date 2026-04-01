@@ -45,7 +45,7 @@ export async function incrementKeyUsage(id: string) {
   await supabase.rpc('increment_api_key_usage', { key_id: id })
 }
 
-export async function logToDB(userId: string | null, type: 'chat'|'error'|'payment'|'api', message: string, metadata: any = {}) {
+export async function logToDB(userId: string | null, type: 'chat'|'error'|'payment'|'api', message: string, metadata: Record<string, unknown> = {}) {
     // Need a service role client to log even if RLS is strict
     const supabase = await createAdminClient()
     await supabase.from('logs').insert({

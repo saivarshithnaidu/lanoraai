@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
@@ -66,7 +66,8 @@ function LoginContent() {
       const redirect = searchParams.get('redirect')
       router.push(redirect || '/chat')
       
-    } catch (error: any) {
+    } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast.error(error.message)
     } finally {
       setLoading(false)
@@ -180,7 +181,7 @@ function LoginContent() {
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-[#ff4d8d] transition-colors"
           >
-            {isSignUp ? 'I have an account • Sign In' : "I'm new here • Create one"}
+            {isSignUp ? 'I have an account â€¢ Sign In' : "I'm new here â€¢ Create one"}
           </button>
         </div>
       </motion.div>
@@ -195,3 +196,4 @@ export default function LoginPage() {
     </Suspense>
   )
 }
+
